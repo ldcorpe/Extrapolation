@@ -15,24 +15,6 @@ namespace GenerateMCFiles
     static class VpionBetaGenerator
     {
         /// <summary>
-        /// Exactly what we need to have in that output sample file.
-        /// </summary>
-        public class VpionData
-        {
-            public bool PassedCalRatio;
-            public double vpi1_pt;
-            public double vpi1_eta;
-            public double vpi1_phi;
-            public double vpi1_E;
-            public double vpi2_pt;
-            public double vpi2_eta;
-            public double vpi2_phi;
-            public double vpi2_E;
-            public double weight;
-            public bool IsInSignalRegion;
-        }
-
-        /// <summary>
         /// Generate a ROOT file that will have all the MC events in them along with the vpion stuff.
         /// </summary>
         /// <param name="sample"></param>
@@ -55,11 +37,14 @@ namespace GenerateMCFiles
                                  vpi1_eta = llp1.eta,
                                  vpi1_phi = llp1.phi,
                                  vpi1_pt = llp1.pT,
+                                 vpi1_Lxy = llp1.Lxy,
                                  vpi2_E = llp2.LLP_E,
                                  vpi2_eta = llp2.eta,
                                  vpi2_phi = llp2.phi,
                                  vpi2_pt = llp2.pT,
+                                 vpi2_Lxy = llp2.Lxy,
                                  weight = 1.0,
+                                 // TODO: get from Emma how to do this correctly (once we figure it out!!)
                                  IsInSignalRegion = true
                              };
 
@@ -70,5 +55,26 @@ namespace GenerateMCFiles
             // Return only the first file - as there should be no more than that!
             return from flst in f select flst.First();
         }
+
+        /// <summary>
+        /// Define the shape of the output ntuple.
+        /// </summary>
+        public class VpionData
+        {
+            public bool PassedCalRatio;
+            public double vpi1_pt;
+            public double vpi1_eta;
+            public double vpi1_phi;
+            public double vpi1_E;
+            public double vpi1_Lxy;
+            public double vpi2_pt;
+            public double vpi2_eta;
+            public double vpi2_phi;
+            public double vpi2_E;
+            public double vpi2_Lxy;
+            public double weight;
+            public bool IsInSignalRegion;
+        }
+
     }
 }
