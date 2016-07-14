@@ -1,14 +1,9 @@
 ﻿using libDataAccess;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using LINQToTTreeLib.Files;
-using System.Text;
-using System.Threading.Tasks;
-using LinqToTTreeInterfacesLib;
 using LINQToTreeHelpers.FutureUtils;
-using LINQToTTreeLib;
+using LinqToTTreeInterfacesLib;
+using LINQToTTreeLib.Files;
 using System.IO;
+using System.Linq;
 
 namespace GenerateMCFiles
 {
