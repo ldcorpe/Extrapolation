@@ -31,8 +31,7 @@ namespace GenerateMCFiles
                              let llp2 = evt.Data.LLPs[1]
                              select new VpionData
                              {
-                                 // TODO: Make sure from Rachel and Emma this is the right trigger - seems to be zero all the time.
-                                 PassedCalRatio = evt.Data.event_passCalRatio_cleanLLP_TAU60,
+                                 PassedCalRatio = evt.Data.event_passCalRatio_TAU60,
                                  vpi1_E = llp1.LLP_E,
                                  vpi1_eta = llp1.eta,
                                  vpi1_phi = llp1.phi,
