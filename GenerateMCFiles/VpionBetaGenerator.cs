@@ -29,6 +29,7 @@ namespace GenerateMCFiles
             public double vpi2_phi;
             public double vpi2_E;
             public double weight;
+            public bool IsInSignalRegion;
         }
 
         /// <summary>
@@ -40,13 +41,15 @@ namespace GenerateMCFiles
             // Get the sample file
             var file = Files.GetSampleAsMetaData(sample);
 
-            // Create the data we are going to write out
+            // Create the data we are going to write out. Every single event
+            // has to be written out.
             var dataStream = from evt in file
                              where evt.Data.LLPs.Count() == 2
                              let llp1 = evt.Data.LLPs[0]
                              let llp2 = evt.Data.LLPs[1]
                              select new VpionData
                              {
+                                 // TODO: Make sure from Rachel and Emma this is the right trigger - seems to be zero all the time.
                                  PassedCalRatio = evt.Data.event_passCalRatio_cleanLLP_TAU60,
                                  vpi1_E = llp1.LLP_E,
                                  vpi1_eta = llp1.eta,
@@ -56,7 +59,8 @@ namespace GenerateMCFiles
                                  vpi2_eta = llp2.eta,
                                  vpi2_phi = llp2.phi,
                                  vpi2_pt = llp2.pT,
-                                 weight = 1.0                                  
+                                 weight = 1.0,
+                                 IsInSignalRegion = true
                              };
 
             // Now, write it out to a file.
