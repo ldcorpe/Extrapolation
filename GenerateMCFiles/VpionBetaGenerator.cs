@@ -20,8 +20,6 @@ namespace GenerateMCFiles
         public class VpionData
         {
             public bool PassedCalRatio;
-            public bool hasSecondJet_case1;
-            public bool hasSecondJet_case2;
             public double vpi1_pt;
             public double vpi1_eta;
             public double vpi1_phi;
@@ -50,8 +48,6 @@ namespace GenerateMCFiles
                              select new VpionData
                              {
                                  PassedCalRatio = evt.Data.event_passCalRatio_cleanLLP_TAU60,
-                                 hasSecondJet_case1 = true,
-                                 hasSecondJet_case2 = true,
                                  vpi1_E = llp1.LLP_E,
                                  vpi1_eta = llp1.eta,
                                  vpi1_phi = llp1.phi,
@@ -60,7 +56,7 @@ namespace GenerateMCFiles
                                  vpi2_eta = llp2.eta,
                                  vpi2_phi = llp2.phi,
                                  vpi2_pt = llp2.pT,
-                                 weight = 1.0
+                                 weight = 1.0                                  
                              };
 
             // Now, write it out to a file.
