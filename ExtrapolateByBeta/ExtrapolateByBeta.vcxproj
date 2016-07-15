@@ -82,12 +82,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="extrapolate_betaw.cxx" />
+    <ClCompile Include="Lxy_weight_calculator.cxx" />
     <ClCompile Include="muon_tree_processor.cxx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Lxy_weight_calculator.h" />
     <ClInclude Include="muon_tree_processor.h" />
     <ClInclude Include="variable_binning_builder.h" />
   </ItemGroup>

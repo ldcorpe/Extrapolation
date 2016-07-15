@@ -1,4 +1,7 @@
 #pragma once
+
+#include <vector>
+
 // Helper class to make making variable binning easy
 class variable_binning_builder {
 public:
@@ -31,5 +34,5 @@ public:
 	double *bin_list() const { return (double*)&(_v[0]); }
 
 private:
-	vector<double> _v;
+	std::vector<double> _v;
 };

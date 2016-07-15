@@ -12,11 +12,14 @@
 #include "doubleError.h"
 #include "muon_tree_processor.h"
 #include "variable_binning_builder.h"
+#include "Lxy_weight_calculator.h"
 
 #pragma warning (push)
 #pragma warning (disable: 4244)
 #include "TLorentzVector.h"
 #pragma warning (pop)
+
+#include "TApplication.h"
 
 #include "TMath.h"
 #include "TH2F.h"
@@ -51,18 +54,22 @@ struct extrapolate_config {
 };
 extrapolate_config parse_command_line(int argc, char **argv);
 variable_binning_builder PopulateTauTable();
+pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntauloops, const muon_tree_processor &mc_entries, const Lxy_weight_calculator &lxyWeight);
 
 ////////////////////////////////
 // Main entry point.
 ////////////////////////////////
 int main(int argc, char**argv)
 {
+	int dummy_argc = 0;
+	auto a = unique_ptr<TApplication>(new TApplication("extrapolate_betaw", &dummy_argc, argv));
 	try {
 		// Pull out the various command line arguments
 		auto config = parse_command_line(argc, argv);
 
-		// Create the muon tree reader object
-		auto reader = new muon_tree_processor(config._muon_tree_root_file);
+		// Create the muon tree reader object and calculate the lxy weighting histogram
+		muon_tree_processor reader (config._muon_tree_root_file);
+		Lxy_weight_calculator lxy_weight(reader);
 
 		// Create the histograms we will use to store the raw results.
 		auto tau_binning = PopulateTauTable();
@@ -70,11 +77,11 @@ int main(int argc, char**argv)
 		auto h_res_ev = new TH1F("h_res_ev", "h_res_ev", tau_binning.nbin(), tau_binning.bin_list());   //Number of events VS lifetime
 
 		// Loop over proper lifetime
-		for (unsigned int i_tau; i_tau < tau_binning.first; i_tau++) {
+		for (unsigned int i_tau = 0; i_tau < tau_binning.nbin(); i_tau++) {
 			auto tau = h_res_eff->GetBinCenter(i_tau+1); // Recal ROOT indicies bins at 1
 
 			// Get the full Beta shape
-			auto r = GetFullBetaShape(tau, n_tau_loops);
+			auto r = GetFullBetaShape(tau, n_tau_loops, reader, lxy_weight);
 		}
 	}
 	catch (exception &e)
@@ -84,6 +91,22 @@ int main(int argc, char**argv)
 		return 1;
 	}
 	return 0;
+}
+
+// Parse the command line.
+extrapolate_config parse_command_line(int argc, char **argv)
+{
+	if (argc != 2) {
+		cout << "Usage: extrapolate_betaw <muonTree-file>" << endl;
+		cout << endl;
+		cout << "    <muonTree-file>           TFile containing the muonTree root file generated from a particular MC sample." << endl;
+
+		throw runtime_error("Wrong number of arguments");
+	}
+
+	extrapolate_config r;
+	r._muon_tree_root_file = argv[1];
+	return r;
 }
 
 // Initalize and populate the tau decay table.
@@ -97,28 +120,73 @@ variable_binning_builder PopulateTauTable()
 	return r;
 }
 
+// Binning we will use for beta histograms
+variable_binning_builder PopulateBetaBinning()
+{
+	variable_binning_builder beta_binning(0.0);
+	beta_binning.bin_up_to(0.8, 0.2);
+	beta_binning.bin_up_to(1.0, 0.05);
+	return beta_binning;
+}
+
+// Sample from the proper lifetime tau for a specific lifetime, and then do the special relativity
+// calculation to understand where it ended up.
+void doSR(TLorentzVector vpi1, TLorentzVector vpi2, Double_t tau, Double_t &beta1, Double_t &beta2, Double_t &L2D1, Double_t &L2D2) {
+
+	beta1 = vpi1.Beta();
+	beta2 = vpi2.Beta();
+	Double_t gamma1 = vpi1.Gamma();
+	Double_t gamma2 = vpi2.Gamma();
+
+	Double_t ct1 = gRandom->Exp(tau);  //get ct of the two vpions 
+	Double_t ct2 = gRandom->Exp(tau);
+
+	Double_t ct1prime = gamma1 * ct1;
+	Double_t ct2prime = gamma2 * ct2;
+	Double_t lxy1 = beta1 * ct1prime;  //construct Lxy of the two vpions 
+	Double_t lxy2 = beta2 * ct2prime;
+
+	Double_t lighttime1 = lxy1 / 2.9979E8 * 1E9;
+	Double_t lighttime2 = lxy2 / 2.9979E8 * 1E9;
+	Double_t timing1 = ct1prime / 2.9979E8 * 1E9;
+	Double_t timing2 = ct2prime / 2.9979E8 * 1E9;
+	Double_t deltat1 = timing1 - lighttime1;
+	Double_t deltat2 = timing2 - lighttime2;
+
+	Double_t theta1 = vpi1.Theta();
+	Double_t theta2 = vpi2.Theta();
+
+	TVector3 vpixyz1, vpixyz2;
+	vpixyz1.SetMagThetaPhi(lxy1, theta1, vpi1.Phi());
+	vpixyz2.SetMagThetaPhi(lxy2, theta2, vpi2.Phi());
+
+	L2D1 = vpixyz1.Perp();
+	L2D2 = vpixyz2.Perp();
+
+	return;
+}
+
 // Generate a lxy1 and lxy2 set of histograms. The denominator (first item) is
-// the generated ones. The numerator is modified by the weight histogram.
-pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntauloops)
+// the generated ones. The numerator is modified by the acceptance histogram
+// built from the input file.
+pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntauloops, const muon_tree_processor &mc_entries, const Lxy_weight_calculator &lxyWeight)
 {
 	// Create numerator and denominator histograms.
 	// To avoid annoying ROOT error messages, make a unique name for each.
 	ostringstream dname, nname;
 	dname << "tau_" << tau << "_den";
 	nname << "tau_" << tau << "_num";
-	TH2F *den = new TH2F(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list());
-	TH2F *num = new TH2F(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list());
+	auto beta_binning(PopulateBetaBinning());
+	unique_ptr<TH2F> den (new TH2F(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
+	unique_ptr<TH2F> num(new TH2F(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
 	den->Sumw2();
 	num->Sumw2();
 
-	for (Int_t n = 0; n < nentries; n++) {
-
-		testtree->GetEntry(n);
-		if (hasGluons) continue;
-
+	// Loop over each MC entry, and generate tau's at several different places
+	mc_entries.process_all_entries([&den, &num, ntauloops, tau, &lxyWeight](const muon_tree_processor::eventInfo &entry) {
 		TLorentzVector vpi1, vpi2;
-		vpi1.SetPtEtaPhiE(vpi1_pt, vpi1_eta, vpi1_phi, vpi1_E);
-		vpi2.SetPtEtaPhiE(vpi2_pt, vpi2_eta, vpi2_phi, vpi2_E);
+		vpi1.SetPtEtaPhiE(entry.vpi1_pt, entry.vpi1_eta, entry.vpi1_phi, entry.vpi1_E);
+		vpi2.SetPtEtaPhiE(entry.vpi2_pt, entry.vpi2_eta, entry.vpi2_phi, entry.vpi2_E);
 
 		for (Int_t maketaus = 0; maketaus < ntauloops; maketaus++) { // tau loop to generate toy events
 
@@ -126,15 +194,15 @@ pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntaulo
 
 			doSR(vpi1, vpi2, tau, beta1, beta2, L2D1, L2D2); // Do special relativity
 
-			den->Fill(beta1, beta2, puweight);
-			double wt = lxyWeight(L2D1, L2D2);
-			num->Fill(beta1, beta2, puweight * wt);
-		}  // maketaus to get h_Ngen_ctau
-	}  // nentries to get the same
+			den->Fill(beta1, beta2, entry.weight);
+			num->Fill(beta1, beta2, entry.weight * lxyWeight(L2D1, L2D2));
+		}
+	});
 
-	return make_pair(num, den);
+	return make_pair(move(num), move(den));
 }
 
+#ifdef notyet
 TH1F *h_res_eff, *h_res_ev;
 
 TH2F *h_Npass_gen = 0;
@@ -154,67 +222,6 @@ ofstream logfile;
 
 // Hold onto variable binning for beta.
 variable_binning_builder beta_binning(0.0);
-
-
-// Load the file and attach the branches. We do this as global variables (yeah, yuck), but that means
-// we can also separate out code and make it easier to re-run.
-Long64_t nentries = 0;
-bool hasGluons;
-int PassedCalRatio;
-bool hasSecondJet_case1, hasSecondJet_case2;
-float vpi1_pt, vpi1_eta, vpi1_phi, vpi1_E;
-float vpi2_pt, vpi2_eta, vpi2_phi, vpi2_E;
-float puweight;
-TTree *testtree = 0;
-void LoadAndAttachFile(const string &instr, const Long64_t maxEventsToRun) {
-	TFile *input = TFile::Open(instr.c_str());
-	if (!input->IsOpen()) {
-		cout << "ERROR: Unable to open file!" << endl;
-		abort();
-	}
-
-	// The 2D lxy efficiency histogram (normalize it)
-	ef12 = (TH2F*)input->Get("Final_events/effi_Lxy1_Lxy2");
-	if (ef12 == nullptr){
-		cout << "Unable to load the effi_Lxy1_Lxy2 histogram!" << endl;
-		abort();
-	}
-	double totprop = ef12->Integral();
-	ef12->Scale(1.0 / totprop);
-
-	testtree = (TTree*)input->Get("muonTree");
-	nentries = testtree->GetEntries();
-	if (maxEventsToRun > 0) {
-		nentries = min(maxEventsToRun, nentries);
-	}
-
-	TBranch *b_hasGluons = testtree->GetBranch("hasGluons");
-	TBranch *b_PassedCalRatio = testtree->GetBranch("PassedCalRatio");
-	TBranch *b_hasSecondJet_case1 = testtree->GetBranch("hasSecondJet_case1");
-	TBranch *b_hasSecondJet_case2 = testtree->GetBranch("hasSecondJet_case2");
-	TBranch *b_vpi1_pt = testtree->GetBranch("vpi1_pt");
-	TBranch *b_vpi1_eta = testtree->GetBranch("vpi1_eta");
-	TBranch *b_vpi1_phi = testtree->GetBranch("vpi1_phi");
-	TBranch *b_vpi1_E = testtree->GetBranch("vpi1_E");
-	TBranch *b_vpi2_pt = testtree->GetBranch("vpi2_pt");
-	TBranch *b_vpi2_eta = testtree->GetBranch("vpi2_eta");
-	TBranch *b_vpi2_phi = testtree->GetBranch("vpi2_phi");
-	TBranch *b_vpi2_E = testtree->GetBranch("vpi2_E");
-	TBranch *b_puweight = testtree->GetBranch("weight");
-	b_hasGluons->SetAddress(&hasGluons);
-	b_PassedCalRatio->SetAddress(&PassedCalRatio);
-	b_hasSecondJet_case1->SetAddress(&hasSecondJet_case1);
-	b_hasSecondJet_case2->SetAddress(&hasSecondJet_case2);
-	b_vpi1_pt->SetAddress(&vpi1_pt);
-	b_vpi1_eta->SetAddress(&vpi1_eta);
-	b_vpi1_phi->SetAddress(&vpi1_phi);
-	b_vpi1_E->SetAddress(&vpi1_E);
-	b_vpi2_pt->SetAddress(&vpi2_pt);
-	b_vpi2_eta->SetAddress(&vpi2_eta);
-	b_vpi2_phi->SetAddress(&vpi2_phi);
-	b_vpi2_E->SetAddress(&vpi2_E);
-	b_puweight->SetAddress(&puweight);
-}
 
 std::pair<Double_t, Double_t> getBayes(Double_t num, Double_t den) {
 	// returns the Bayesian uncertainty over the num/den ratio
@@ -264,27 +271,7 @@ std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError
 	return result;
 }
 
-// Controls how we calc in/out.
-bool lxyUseEffWeight = false;
 
-// Do a square weight calculation.
-double lxy1DWeight(double L2D)
-{
-	return L2D < 3.88 && L2D > 2.28 ? 1.0 : 0.0; // From an email from Daniela
-	//return L2D < 4.25 && L2D > 2.25 ? 1.0 : 0.0; // Original
-}
-
-// Calc the weight for an lxy guy to be in the proper region.
-double lxyWeight(double L2D1, double L2D2) {
-	if (lxyUseEffWeight) {
-		// look up in the weight histogram
-		int xbin = ef12->FindBin(L2D1, L2D2);
-		return ef12->GetBinContent(xbin);
-	}
-	else {
-		return lxy1DWeight(L2D1) * lxy1DWeight(L2D2);
-	}
-}
 
 
 // Calculate the beta's for the event only once. This is done because it is
@@ -559,41 +546,6 @@ void extrapolate_betaw(string mp, string file = "testing", Double_t timecutshift
 	logfile.close();
 }
 
-void doSR(TLorentzVector vpi1, TLorentzVector vpi2, Double_t tau, Double_t &beta1, Double_t &beta2, Double_t &L2D1, Double_t &L2D2) {
-
-	beta1 = vpi1.Beta();
-	beta2 = vpi2.Beta();
-	Double_t gamma1 = vpi1.Gamma();
-	Double_t gamma2 = vpi2.Gamma();
-
-	Double_t ct1 = gRandom->Exp(tau);  //get ct of the two vpions 
-	Double_t ct2 = gRandom->Exp(tau);
-
-	Double_t ct1prime = gamma1 * ct1;
-	Double_t ct2prime = gamma2 * ct2;
-	Double_t lxy1 = beta1 * ct1prime;  //construct Lxy of the two vpions 
-	Double_t lxy2 = beta2 * ct2prime;
-
-	Double_t lighttime1 = lxy1 / 2.9979E8 * 1E9;
-	Double_t lighttime2 = lxy2 / 2.9979E8 * 1E9;
-	Double_t timing1 = ct1prime / 2.9979E8 * 1E9;
-	Double_t timing2 = ct2prime / 2.9979E8 * 1E9;
-	Double_t deltat1 = timing1 - lighttime1;
-	Double_t deltat2 = timing2 - lighttime2;
-
-	Double_t theta1 = vpi1.Theta();
-	Double_t theta2 = vpi2.Theta();
-
-	TVector3 vpixyz1, vpixyz2;
-	vpixyz1.SetMagThetaPhi(lxy1, theta1, vpi1_phi);
-	vpixyz2.SetMagThetaPhi(lxy2, theta2, vpi2_phi);
-
-	L2D1 = vpixyz1.Perp();
-	L2D2 = vpixyz2.Perp();
-
-	return;
-}
-
 //
 // Parse the command line arguments
 //
@@ -718,3 +670,4 @@ void setParams(std::string mp, Double_t &mass, Double_t &xsec, Double_t &effi_re
 	}
 	return;
 }
+#endif
