@@ -13,6 +13,7 @@
 #include "muon_tree_processor.h"
 #include "variable_binning_builder.h"
 #include "Lxy_weight_calculator.h"
+#include "beta_cache.h"
 
 #pragma warning (push)
 #pragma warning (disable: 4244)
@@ -47,14 +48,20 @@ using namespace std;
 
 // How many loops in tau should we do?
 size_t n_tau_loops = 5;
+bool calc_trigger_only = false; // Do trigger counts only? Might eventually be an argument, but for now...
 
 // Helper methods
 struct extrapolate_config {
 	string _muon_tree_root_file;
+	double _tau_gen;
 };
 extrapolate_config parse_command_line(int argc, char **argv);
 variable_binning_builder PopulateTauTable();
 pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntauloops, const muon_tree_processor &mc_entries, const Lxy_weight_calculator &lxyWeight);
+template<class T> unique_ptr<T> DivideShape(const pair<unique_ptr<T>, unique_ptr<T>> &r, const string &name, const string &title);
+doubleError CalcPassedEvents(const muon_tree_processor &reader, const unique_ptr<TH2F> &weightHist, bool eventCountOnly = false, const unique_ptr<TH2F> &passHist = nullptr, bool triggerOnly = false);
+std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError &den);
+void SetAsymError(unique_ptr<TGraphAsymmErrors> &g, int bin, double tau, double bvalue, const pair<double, double> &assErrors);
 
 ////////////////////////////////
 // Main entry point.
@@ -71,10 +78,22 @@ int main(int argc, char**argv)
 		muon_tree_processor reader (config._muon_tree_root_file);
 		Lxy_weight_calculator lxy_weight(reader);
 
+		// How often, for the generated sample, a pair of beta1, beta2 vpions reaches the HCal.
+		// This is done at generation lifetime, so this will be the baseline which we scale against
+		// in the tau loop below.
+		auto r = GetFullBetaShape(config._tau_gen, n_tau_loops, reader, lxy_weight);
+		auto h_gen_ratio = DivideShape(r, "h_Ngen_ratio", "Fraction of events in beta space at raw generated ctau");
+		auto passedEventsAtGen = CalcPassedEvents(reader, nullptr, false, nullptr, calc_trigger_only);
+		auto totalEventsAtGen = CalcPassedEvents(reader, nullptr, true, nullptr, calc_trigger_only);
+
 		// Create the histograms we will use to store the raw results.
 		auto tau_binning = PopulateTauTable();
 		auto h_res_eff = new TH1F("h_res_eff", "h_res_eff", tau_binning.nbin(), tau_binning.bin_list()); //Efficiency VS lifetime
 		auto h_res_ev = new TH1F("h_res_ev", "h_res_ev", tau_binning.nbin(), tau_binning.bin_list());   //Number of events VS lifetime
+
+		auto g_res_eff = unique_ptr<TGraphAsymmErrors>(new TGraphAsymmErrors(tau_binning.nbin()));
+		g_res_eff->SetName("g_res_eff");
+		g_res_eff->SetTitle("Absolute efficiency to the generated analysis");
 
 		// Loop over proper lifetime
 		for (unsigned int i_tau = 0; i_tau < tau_binning.nbin(); i_tau++) {
@@ -82,6 +101,27 @@ int main(int argc, char**argv)
 
 			// Get the full Beta shape
 			auto r = GetFullBetaShape(tau, n_tau_loops, reader, lxy_weight);
+			auto h_caut_ratio = DivideShape(r, "h_caut_ratio", "h_caut_ratio");
+
+			// Now, create a weighting histogram. This is just the differece between the numerators at the
+			// extrapolated ctau and at the generated ctau
+			auto h_Nratio = unique_ptr<TH2F>(static_cast<TH2F*>(h_caut_ratio->Clone()));
+			h_Nratio->Divide(h_gen_ratio.get());
+
+			// Next, re-calc the efficiency given the new beta map.
+			auto passedEventsAtTau = CalcPassedEvents(reader, h_Nratio, false, nullptr, calc_trigger_only);
+			doubleError relativeEff = passedEventsAtTau / passedEventsAtGen;
+			doubleError eff = passedEventsAtTau / totalEventsAtGen;
+
+			// Calculate proper asymmetric errors and save the extrapolation result for the change in efficency.
+			std::pair<Double_t, Double_t> bayerr_sig_perc = getBayes(passedEventsAtTau, totalEventsAtGen);
+			Double_t erro = (bayerr_sig_perc.first + bayerr_sig_perc.second)*0.5;
+
+			h_res_eff->SetBinContent(i_tau + 1, eff.value());
+			h_res_eff->SetBinError(i_tau + 1, erro);
+			SetAsymError(g_res_eff, i_tau, tau, eff.value(), bayerr_sig_perc);
+
+			cout << " tau = " << tau << " npassed = " << passedEventsAtTau << " passed tau/gen = " << passedEventsAtTau / passedEventsAtGen << " global eff = " << eff << endl;
 		}
 	}
 	catch (exception &e)
@@ -96,16 +136,18 @@ int main(int argc, char**argv)
 // Parse the command line.
 extrapolate_config parse_command_line(int argc, char **argv)
 {
-	if (argc != 2) {
-		cout << "Usage: extrapolate_betaw <muonTree-file>" << endl;
+	if (argc != 3) {
+		cout << "Usage: extrapolate_betaw <muonTree-file> <generated-ctau>" << endl;
 		cout << endl;
 		cout << "    <muonTree-file>           TFile containing the muonTree root file generated from a particular MC sample." << endl;
+		cout << "    <generated-ctau>          The lifetime (in meters) where the sample was generated." << endl;
 
 		throw runtime_error("Wrong number of arguments");
 	}
 
 	extrapolate_config r;
 	r._muon_tree_root_file = argv[1];
+	r._tau_gen = atof(argv[2]);
 	return r;
 }
 
@@ -114,9 +156,13 @@ extrapolate_config parse_command_line(int argc, char **argv)
 variable_binning_builder PopulateTauTable()
 {
 	variable_binning_builder r(0.0);
+#ifdef TEST_RUN
+	r.bin_up_to(50.0, 5.0);
+#else
 	r.bin_up_to(0.6, 0.005);
 	r.bin_up_to(4.0, 0.05);
 	r.bin_up_to(50.0, 0.2);
+#endif
 	return r;
 }
 
@@ -178,7 +224,7 @@ pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntaulo
 	nname << "tau_" << tau << "_num";
 	auto beta_binning(PopulateBetaBinning());
 	unique_ptr<TH2F> den (new TH2F(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
-	unique_ptr<TH2F> num(new TH2F(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
+	unique_ptr<TH2F> num(new TH2F(nname.str().c_str(), nname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
 	den->Sumw2();
 	num->Sumw2();
 
@@ -200,6 +246,84 @@ pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntaulo
 	});
 
 	return make_pair(move(num), move(den));
+}
+
+// Calculate a 2D efficiency given a denominator and the numerator selected from the denominator
+template<class T>
+unique_ptr<T> DivideShape(const pair<unique_ptr<T>, unique_ptr<T>> &r, const string &name, const string &title)
+{
+	unique_ptr<T> ratio (static_cast<T*>(r.first->Clone()));
+	ratio->Divide(r.first.get(), r.second.get(), 1.0, 1.0, "B");
+	ratio->SetNameTitle(name.c_str(), title.c_str());
+
+	return ratio;
+}
+
+// Calculate the number of events that pass our cuts (possibly weighted).
+doubleError CalcPassedEvents(const muon_tree_processor &reader, const unique_ptr<TH2F> &weightHist, bool eventCountOnly, const unique_ptr<TH2F> &passHist, bool triggerOnly)
+{
+	doubleError nEvents; // This will be the number of events in the TTree (without gluons)
+
+	if (passHist) {
+		passHist->Sumw2();
+	}
+
+	// Calculate the event weight. A combination of the pile up reweighting from the ntuple and perhaps
+	// the beta re-weighting from the input histogram.
+	reader.process_all_entries([&weightHist, eventCountOnly, triggerOnly, &nEvents, &passHist](const muon_tree_processor::eventInfo &entry) {
+
+		doubleError weight(entry.weight, entry.weight);
+
+		beta_cache b (entry);
+		if (weightHist) {
+			int nbin = weightHist->FindBin(b.beta1(), b.beta2());
+			weight *= doubleError(weightHist->GetBinContent(nbin), weightHist->GetBinError(nbin));
+		}
+
+		// Count the event and populate the output histogram, if
+		// We are doing an event count only (e.g. the denominator) or
+		// it passes our analysis cuts (e.g. the numerator).
+		if (eventCountOnly
+			|| entry.IsInSignalRegion
+			|| (triggerOnly && entry.PassedCalRatio)
+			) {
+
+			nEvents += weight;
+			if (passHist) passHist->Fill(b.beta1(), b.beta2(), weight.value());
+		}
+	});
+
+	return nEvents;
+}
+
+// Calc error via bayes
+std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError &den) {
+	// returns the Bayesian uncertainty over the num/den ratio
+	std::pair<Double_t, Double_t> result(0., 0.);
+
+	auto h_num = unique_ptr<TH1D>(new TH1D("h_num", "", 1, 0, 1));
+	auto h_den = unique_ptr<TH1D>(new TH1D("h_den", "", 1, 0, 1));
+
+	h_num->SetBinContent(1, num.value());
+	h_den->SetBinContent(1, den.value());
+	h_num->SetBinError(1, num.err());
+	h_den->SetBinError(1, den.err());
+
+	auto h_eff = unique_ptr<TGraphAsymmErrors>(new TGraphAsymmErrors());
+	h_eff->BayesDivide(h_num.get(), h_den.get());//, "w"); 
+
+	result.first = h_eff->GetErrorYlow(0);
+	result.second = h_eff->GetErrorYhigh(0);
+
+	return result;
+}
+
+// Set the asymmetric error simply
+void SetAsymError(unique_ptr<TGraphAsymmErrors> &g, int bin, double tau, double bvalue, const pair<double, double> &assErrors)
+{
+	g->SetPoint(bin, tau, bvalue);
+	g->SetPointEYlow(bin, assErrors.first);
+	g->SetPointEYhigh(bin, assErrors.second);
 }
 
 #ifdef notyet
@@ -244,121 +368,6 @@ std::pair<Double_t, Double_t> getBayes(Double_t num, Double_t den) {
 	delete h_eff;
 
 	return result;
-}
-
-std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError &den) {
-	// returns the Bayesian uncertainty over the num/den ratio
-	std::pair<Double_t, Double_t> result(0., 0.);
-
-	TH1D *h_num = new TH1D("h_num", "", 1, 0, 1);
-	TH1D *h_den = new TH1D("h_den", "", 1, 0, 1);
-
-	h_num->SetBinContent(1, num.value());
-	h_den->SetBinContent(1, den.value());
-	h_num->SetBinError(1, num.err());
-	h_den->SetBinError(1, den.err());
-
-	TGraphAsymmErrors *h_eff = new TGraphAsymmErrors();
-	h_eff->BayesDivide(h_num, h_den);//, "w"); 
-
-	result.first = h_eff->GetErrorYlow(0);
-	result.second = h_eff->GetErrorYhigh(0);
-
-	delete h_num;
-	delete h_den;
-	delete h_eff;
-
-	return result;
-}
-
-
-
-
-// Calculate the beta's for the event only once. This is done because it is
-// very slow to do this (the SetPtEtaPhiE is a very expensive call).
-class beta_cache {
-public:
-	inline beta_cache()
-		: _gotit(false)
-	{}
-
-	inline double beta1() { calc();  return _b1; }
-	inline double beta2() { calc();  return _b2; }
-
-private:
-	bool _gotit;
-	double _b1, _b2;
-
-	void calc()
-	{
-		if (_gotit)
-			return;
-		_gotit = true;
-
-		TLorentzVector vpi1, vpi2;
-		vpi1.SetPtEtaPhiE(vpi1_pt, vpi1_eta, vpi1_phi, vpi1_E);
-		vpi2.SetPtEtaPhiE(vpi2_pt, vpi2_eta, vpi2_phi, vpi2_E);
-
-		_b1 = vpi1.Beta();
-		_b2 = vpi2.Beta();
-	}
-};
-
-// Calculate the number of events that pass our cuts (possibly weighted).
-doubleError CalcPassedEvents(TH2F *weightHist = 0, bool eventCountOnly = false, TH2F *passHist = 0, bool triggerOnly = false)
-{
-	doubleError nEvents; // This will be the number of events in the TTree (without gluons)
-
-	if (passHist) {
-		passHist->Sumw2();
-	}
-
-	for (Int_t n = 0; n < nentries; n++) {
-
-		testtree->GetEntry(n);
-		if (hasGluons) continue;
-
-		// Calculate the event weight. A combination of the pile up reweighting from the ntuple and perhaps
-		// the beta re-weighting from the input histogram.
-		doubleError weight(puweight, puweight);
-
-		beta_cache b;
-		if (weightHist) {
-			int nbin = weightHist->FindBin(b.beta1(), b.beta2());
-			weight *= doubleError(weightHist->GetBinContent(nbin), weightHist->GetBinError(nbin));
-		}
-
-		// Count the event and populate the output histogram, if
-		// We are doing an event count only (e.g. the denominator) or
-		// it passes our analysis cuts (e.g. the numerator).
-		if (eventCountOnly
-			|| (hasSecondJet_case1 || hasSecondJet_case2)
-			|| (triggerOnly && PassedCalRatio)
-			) {
-
-			nEvents += weight;
-			if (passHist) passHist->Fill(b.beta1(), b.beta2(), weight.value());
-		}
-	}
-
-	return nEvents;
-}
-
-void SetAsymError(TGraphAsymmErrors *g, int bin, double tau, double bvalue, const pair<double, double> &assErrors)
-{
-	g->SetPoint(bin, tau, bvalue);
-	g->SetPointEYlow(bin, assErrors.first);
-	g->SetPointEYhigh(bin, assErrors.second);
-}
-
-// Given the result from the beta shape above, do a ratio,a nd rename
-TH2F *DivideShape(const pair<TH2F*, TH2F*> &r, const string &name, const string &title)
-{
-	TH2F *ratio = (TH2F*)r.first->Clone();
-	ratio->Divide(r.second);
-	ratio->SetNameTitle(name.c_str(), title.c_str());
-
-	return ratio;
 }
 
 void extrapolate_betaw(string mp, string file = "testing", Double_t timecutshift = 0.0, Double_t ETcutshift = 0.0, int ncount = -1.0, bool triggerOnly = false, bool use_lxyeff = false, string inputFileSuffix = "_Rachel_3D")

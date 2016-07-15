@@ -41,7 +41,10 @@ public:
 	}
 
 private:
-	std::unique_ptr<TTree> _tree;
+	// The tree we are scanning over
+	// The tree is owned by the file, so we don't need to delete it; it will be deleted
+	// for us when the file is removed.
+	TTree *_tree;
 	std::unique_ptr<TFile> _file;
 
 	eventInfo _tree_data;

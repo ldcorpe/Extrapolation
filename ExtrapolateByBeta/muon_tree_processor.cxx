@@ -10,7 +10,7 @@ muon_tree_processor::muon_tree_processor(const string &filename)
 	if (!_file->IsOpen()) {
 		throw runtime_error("Unable to open ROOT input file " + filename + "!");
 	}
-	_tree = unique_ptr<TTree>(static_cast<TTree*>(_file->Get("extrapTree")));
+	_tree = static_cast<TTree*>(_file->Get("extrapTree"));
 	if (!_tree) {
 		throw runtime_error("Unable to find extrapTree TTree in file " + filename + "!");
 	}

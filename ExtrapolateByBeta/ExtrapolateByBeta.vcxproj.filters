@@ -38,5 +38,8 @@
     <ClInclude Include="Lxy_weight_calculator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="beta_cache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
