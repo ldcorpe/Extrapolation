@@ -29,5 +29,8 @@
     <ClInclude Include="muon_tree_processor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="variable_binning_builder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

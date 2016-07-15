@@ -2,11 +2,16 @@
 //
 // This code was lifted (and modified) from the Run 1 CalRatio analysis.
 //
+// Main goal: Calculate the relative efficiency of the analysis as a function of proper life-time.
+//            - It calculates the absolute efficiency.
+//
 // Inputs are taken on the command line (to make it easy to use in a tool chain).
 //   arg1: ROOT File that contains the MuonTree.
+//   arg2: proper lifetime of generation of the sample we are looking at (e.g. 5 or a ctau = 5 meters).
 
 #include "doubleError.h"
 #include "muon_tree_processor.h"
+#include "variable_binning_builder.h"
 
 #pragma warning (push)
 #pragma warning (disable: 4244)
@@ -31,13 +36,21 @@
 #include <vector>
 #include <sstream>
 
+#include <memory>
+
 using namespace std;
+
+// Some config constants
+
+// How many loops in tau should we do?
+size_t n_tau_loops = 5;
 
 // Helper methods
 struct extrapolate_config {
 	string _muon_tree_root_file;
 };
 extrapolate_config parse_command_line(int argc, char **argv);
+variable_binning_builder PopulateTauTable();
 
 ////////////////////////////////
 // Main entry point.
@@ -50,6 +63,19 @@ int main(int argc, char**argv)
 
 		// Create the muon tree reader object
 		auto reader = new muon_tree_processor(config._muon_tree_root_file);
+
+		// Create the histograms we will use to store the raw results.
+		auto tau_binning = PopulateTauTable();
+		auto h_res_eff = new TH1F("h_res_eff", "h_res_eff", tau_binning.nbin(), tau_binning.bin_list()); //Efficiency VS lifetime
+		auto h_res_ev = new TH1F("h_res_ev", "h_res_ev", tau_binning.nbin(), tau_binning.bin_list());   //Number of events VS lifetime
+
+		// Loop over proper lifetime
+		for (unsigned int i_tau; i_tau < tau_binning.first; i_tau++) {
+			auto tau = h_res_eff->GetBinCenter(i_tau+1); // Recal ROOT indicies bins at 1
+
+			// Get the full Beta shape
+			auto r = GetFullBetaShape(tau, n_tau_loops);
+		}
 	}
 	catch (exception &e)
 	{
@@ -58,6 +84,55 @@ int main(int argc, char**argv)
 		return 1;
 	}
 	return 0;
+}
+
+// Initalize and populate the tau decay table.
+// Due to the fact we run out of stats, this is, by its very nature, not equal binning.
+variable_binning_builder PopulateTauTable()
+{
+	variable_binning_builder r(0.0);
+	r.bin_up_to(0.6, 0.005);
+	r.bin_up_to(4.0, 0.05);
+	r.bin_up_to(50.0, 0.2);
+	return r;
+}
+
+// Generate a lxy1 and lxy2 set of histograms. The denominator (first item) is
+// the generated ones. The numerator is modified by the weight histogram.
+pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntauloops)
+{
+	// Create numerator and denominator histograms.
+	// To avoid annoying ROOT error messages, make a unique name for each.
+	ostringstream dname, nname;
+	dname << "tau_" << tau << "_den";
+	nname << "tau_" << tau << "_num";
+	TH2F *den = new TH2F(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list());
+	TH2F *num = new TH2F(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list());
+	den->Sumw2();
+	num->Sumw2();
+
+	for (Int_t n = 0; n < nentries; n++) {
+
+		testtree->GetEntry(n);
+		if (hasGluons) continue;
+
+		TLorentzVector vpi1, vpi2;
+		vpi1.SetPtEtaPhiE(vpi1_pt, vpi1_eta, vpi1_phi, vpi1_E);
+		vpi2.SetPtEtaPhiE(vpi2_pt, vpi2_eta, vpi2_phi, vpi2_E);
+
+		for (Int_t maketaus = 0; maketaus < ntauloops; maketaus++) { // tau loop to generate toy events
+
+			Double_t beta1 = -1, beta2 = -1, L2D1 = -1, L2D2 = -1;
+
+			doSR(vpi1, vpi2, tau, beta1, beta2, L2D1, L2D2); // Do special relativity
+
+			den->Fill(beta1, beta2, puweight);
+			double wt = lxyWeight(L2D1, L2D2);
+			num->Fill(beta1, beta2, puweight * wt);
+		}  // maketaus to get h_Ngen_ctau
+	}  // nentries to get the same
+
+	return make_pair(num, den);
 }
 
 TH1F *h_res_eff, *h_res_ev;
@@ -71,33 +146,11 @@ TGraphAsymmErrors *g_res_ev;
 TGraphAsymmErrors *g_res_landau;
 void setParams(std::string mp, Double_t &mass, Double_t &xsec, Double_t &effi_real, int &k_gen, Double_t &tau_gen, Double_t &scale_factor);
 void doSR(TLorentzVector vpi1, TLorentzVector vpi2, Double_t tau, Double_t &beta1, Double_t &beta2, Double_t &L2D1, Double_t &L2D2);
-Double_t *PopulateTauTable(Int_t &nbin);
 
 TH2F *ef12;
 
 ofstream logfile;
 
-// Helper class to make making variable binning easy
-class variable_binning_builder {
-public:
-	variable_binning_builder(double low)
-	{
-		_v.push_back(low);
-	}
-	void add_bins(int number, double bin_width)
-	{
-		for (int i = 0; i < number; i++) {
-			_v.push_back(*(_v.end() - 1) + bin_width);
-		}
-	}
-	// Number of bins to delcare to ROOT - note it is one less, as we have to
-	// give it the upper adn lower boundaries of the last and first bin!
-	int nbin() const { return _v.size() - 1; }
-	double *bin_list() const { return (double*)&(_v[0]); }
-
-private:
-	vector<double> _v;
-};
 
 // Hold onto variable binning for beta.
 variable_binning_builder beta_binning(0.0);
@@ -233,41 +286,6 @@ double lxyWeight(double L2D1, double L2D2) {
 	}
 }
 
-// At the generated tau, calculate a beta1 x beta2 shape
-// Warning: owner assumes responsibility for cleaning these guys up!
-pair<TH2F*, TH2F*> GetFullBetaShape(double tau, int ntauloops, const string &name)
-{
-	string dname = name + "_den";
-	string nname = name + "_num";
-	TH2F *den = new TH2F(dname.c_str(), dname.c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list());
-	TH2F *num = new TH2F(nname.c_str(), nname.c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list());
-
-	den->Sumw2();
-	num->Sumw2();
-
-	for (Int_t n = 0; n < nentries; n++) {
-
-		testtree->GetEntry(n);
-		if (hasGluons) continue;
-
-		TLorentzVector vpi1, vpi2;
-		vpi1.SetPtEtaPhiE(vpi1_pt, vpi1_eta, vpi1_phi, vpi1_E);
-		vpi2.SetPtEtaPhiE(vpi2_pt, vpi2_eta, vpi2_phi, vpi2_E);
-
-		for (Int_t maketaus = 0; maketaus < ntauloops; maketaus++) { // tau loop to generate toy events
-
-			Double_t beta1 = -1, beta2 = -1, L2D1 = -1, L2D2 = -1;
-
-			doSR(vpi1, vpi2, tau, beta1, beta2, L2D1, L2D2); // Do special relativity
-
-			den->Fill(beta1, beta2, puweight);
-			double wt = lxyWeight(L2D1, L2D2);
-			num->Fill(beta1, beta2, puweight * wt);
-		}  // maketaus to get h_Ngen_ctau
-	}  // nentries to get the same
-
-	return make_pair(num, den);
-}
 
 // Calculate the beta's for the event only once. This is done because it is
 // very slow to do this (the SetPtEtaPhiE is a very expensive call).
@@ -699,81 +717,4 @@ void setParams(std::string mp, Double_t &mass, Double_t &xsec, Double_t &effi_re
 		std::cout << mp << " is not a valid mass point." << std::endl;
 	}
 	return;
-}
-
-// Initalize and populate the tau decay table.
-// We coudl do this in one step if we had C++11 everywhere... :(
-Double_t *PopulateTauTable(Int_t &nbin)
-{
-	const Int_t sz = 421;
-	nbin = sz;
-	Double_t temp[sz + 1] = { 0., 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05, 0.055, 0.06, 0.065, 0.07, 0.075, 0.08, 0.085, 0.09, 0.095, //20
-		0.1, 0.105, 0.11, 0.115, 0.12, 0.125, 0.13, 0.135, 0.14, 0.145, 0.15, 0.155, 0.16, 0.165, 0.17, 0.175, 0.18, 0.185, 0.19, 0.195,//+20
-		0.2, 0.205, 0.21, 0.215, 0.22, 0.225, 0.23, 0.235, 0.24, 0.245, 0.25, 0.255, 0.26, 0.265, 0.27, 0.28, 0.285, 0.29, 0.295,//+19
-		0.3, 0.305, 0.31, 0.315, 0.32, 0.325, 0.33, 0.335, 0.34, 0.345, 0.355, 0.36, 0.365, 0.37, 0.375, 0.38, 0.385, 0.39, 0.395,//+19
-		0.4, 0.405, 0.41, 0.415, 0.42, 0.425, 0.43, 0.435, 0.44, 0.445, 0.455, 0.46, 0.465, 0.47, 0.475, 0.48, 0.485, 0.49, 0.495,//+19
-		0.505, 0.51, 0.515, 0.52, 0.525, 0.53, 0.535, 0.54, 0.545, 0.55, 0.555, 0.56, 0.565, 0.57, 0.575, 0.58, 0.585, 0.59, 0.595,//+20
-		0.6, 0.61, 0.65, 0.71, 0.75, 0.79, 0.81, 0.85, 0.89, 0.91, 0.95, 1.0,//+11 = 128
-		1050. / 1000., 1100. / 1000., 1150. / 1000., 1200. / 1000., 1240. / 1000., 1260. / 1000., 1275. / 1000., 1325. / 1000., 1350. / 1000., 1400. / 1000., 1450. / 1000., //+11
-		1490. / 1000., 1510. / 1000., 1550. / 1000., 1600. / 1000., 1650. / 1000., 1680. / 1000., 1720. / 1000., 1750. / 1000., 1800. / 1000., 1840. / 1000., 1860. / 1000.,
-		1900. / 1000., 1950. / 1000., 2000. / 1000., 2050. / 1000., 2100. / 1000., 2150. / 1000., 2200. / 1000., 2250. / 1000., 2300. / 1000., 2350. / 1000.,
-		2400. / 1000., 2450. / 1000., 2500. / 1000., 2550. / 1000., 2600. / 1000., 2650. / 1000., 2700. / 1000., 2750. / 1000., 2800. / 1000., 2850. / 1000.,
-		2900. / 1000., 2950. / 1000., 3000. / 1000., 3050. / 1000., 3100. / 1000., 3150. / 1000., 3200. / 1000., 3250. / 1000., 3300. / 1000., 3350. / 1000.,
-		3400. / 1000., 3450. / 1000., 3500. / 1000., 3550. / 1000., 3600. / 1000., 3650. / 1000., 3700. / 1000., 3750. / 1000., 3800. / 1000., 3850. / 1000.,
-		3900. / 1000., 3950. / 1000.,//+63 = 192  
-
-		4000. / 1000., 4200. / 1000., 4400. / 1000., 4600. / 1000., 4800. / 1000.,
-		5000. / 1000., 5200. / 1000., 5400. / 1000., 5600. / 1000., 5800. / 1000.,
-		6000. / 1000., 6200. / 1000., 6400. / 1000., 6600. / 1000., 6800. / 1000.,
-		7000. / 1000., 7200. / 1000., 7400. / 1000., 7600. / 1000., 7800. / 1000.,
-		8000. / 1000., 8200. / 1000., 8400. / 1000., 8600. / 1000., 8800. / 1000.,
-		9000. / 1000., 9200. / 1000., 9400. / 1000., 9600. / 1000., 9800. / 1000.,//+30=222 
-		10000. / 1000., 10200. / 1000., 10400. / 1000., 10600. / 1000., 10800. / 1000.,
-		11000. / 1000., 11200. / 1000., 11400. / 1000., 11600. / 1000., 11800. / 1000.,
-		12000. / 1000., 12200. / 1000., 12400. / 1000., 12600. / 1000., 12800. / 1000.,
-		13000. / 1000., 13200. / 1000., 13400. / 1000., 13600. / 1000., 13800. / 1000.,
-		14000. / 1000., 14200. / 1000., 14400. / 1000., 14600. / 1000., 14800. / 1000., //+25=247
-
-
-		15000. / 1000., 15200. / 1000., 15400. / 1000., 15600. / 1000., 15800. / 1000.,
-		16000. / 1000., 16200. / 1000., 16400. / 1000., 16600. / 1000., 16800. / 1000.,
-		17000. / 1000., 17200. / 1000., 17400. / 1000., 17600. / 1000., 17800. / 1000.,
-		18000. / 1000., 18200. / 1000., 18400. / 1000., 18600. / 1000., 18800. / 1000.,
-		19000. / 1000., 19100. / 1000., 19400. / 1000., 19600. / 1000., 19800. / 1000.,
-		20000. / 1000., 20200. / 1000., 20400. / 1000., 20600. / 1000., 20800. / 1000.,
-		21000. / 1000., 21200. / 1000., 21400. / 1000., 21600. / 1000., 21800. / 1000.,
-		22000. / 1000., 22200. / 1000., 22400. / 1000., 22600. / 1000., 22800. / 1000.,
-		23000. / 1000., 23200. / 1000., 23400. / 1000., 23600. / 1000., 23800. / 1000.,
-		24000. / 1000., 24200. / 1000., 24400. / 1000., 24600. / 1000., 24800. / 1000.,
-		25000. / 1000., 25200. / 1000., 25400. / 1000., 25600. / 1000., 25800. / 1000.,
-		26000. / 1000., 26200. / 1000., 26400. / 1000., 26600. / 1000., 26800. / 1000.,
-		27000. / 1000., 27200. / 1000., 27400. / 1000., 27600. / 1000., 27800. / 1000.,
-		28000. / 1000., 28200. / 1000., 28400. / 1000., 28600. / 1000., 28800. / 1000.,
-		29000. / 1000., 29200. / 1000., 29400. / 1000., 29600. / 1000., 29800. / 1000.,
-		30000. / 1000., 30200. / 1000., 30400. / 1000., 30600. / 1000., 30800. / 1000.,
-		31000. / 1000., 31200. / 1000., 31400. / 1000., 31600. / 1000., 31800. / 1000.,
-		32000. / 1000., 32200. / 1000., 32400. / 1000., 32600. / 1000., 32800. / 1000.,
-		33000. / 1000., 33200. / 1000., 33400. / 1000., 33600. / 1000., 33800. / 1000.,
-		34000. / 1000., 34200. / 1000., 34400. / 1000., 34600. / 1000., 34800. / 1000.,//+100 = 347
-		35000. / 1000., 35200. / 1000., 35400. / 1000., 35600. / 1000., 35800. / 1000.,
-		36000. / 1000., 36200. / 1000., 36400. / 1000., 36600. / 1000., 36800. / 1000.,
-		37000. / 1000., 37200. / 1000., 37400. / 1000., 37600. / 1000., 37800. / 1000.,
-		38000. / 1000., 38200. / 1000., 38400. / 1000., 38600. / 1000., 38800. / 1000.,
-		39000. / 1000., 39200. / 1000., 39400. / 1000., 39600. / 1000., 39800. / 1000.,
-		40000. / 1000., 40200. / 1000., 40400. / 1000., 40600. / 1000., 40800. / 1000.,
-		41000. / 1000., 41200. / 1000., 41400. / 1000., 41600. / 1000., 41800. / 1000.,
-		42000. / 1000., 42200. / 1000., 42400. / 1000., 42600. / 1000., 42800. / 1000.,
-		43000. / 1000., 43200. / 1000., 43400. / 1000., 43600. / 1000., 43800. / 1000.,
-		44000. / 1000., 44200. / 1000., 44400. / 1000., 44600. / 1000., 44800. / 1000.,
-		45000. / 1000., 45200. / 1000., 45400. / 1000., 45600. / 1000., 45800. / 1000.,
-		46000. / 1000., 46200. / 1000., 46400. / 1000., 46600. / 1000., 46800. / 1000.,
-		47000. / 1000., 47200. / 1000., 47400. / 1000., 47600. / 1000., 47800. / 1000.,
-		48000. / 1000., 48200. / 1000., 48400. / 1000., 48600. / 1000., 48800. / 1000.,
-		49000. / 1000., 49200. / 1000., 49400. / 1000., 49600. / 1000., 49800. / 1000. };//+75 = 422 
-
-	Double_t *result = new Double_t[sz + 1];
-	for (int i = 0; i <= sz; i++) {
-		result[i] = temp[i];
-	}
-	return result;
 }
