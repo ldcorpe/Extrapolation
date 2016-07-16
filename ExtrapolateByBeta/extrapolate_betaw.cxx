@@ -83,7 +83,6 @@ int main(int argc, char**argv)
 		// Create the histograms we will use to store the raw results.
 		auto tau_binning = PopulateTauTable();
 		auto h_res_eff = new TH1F("h_res_eff", "h_res_eff", tau_binning.nbin(), tau_binning.bin_list()); //Efficiency VS lifetime
-		auto h_res_ev = new TH1F("h_res_ev", "h_res_ev", tau_binning.nbin(), tau_binning.bin_list());   //Number of events VS lifetime
 
 		auto g_res_eff = unique_ptr<TGraphAsymmErrors>(new TGraphAsymmErrors(tau_binning.nbin()));
 		g_res_eff->SetName("g_res_eff");
@@ -117,6 +116,12 @@ int main(int argc, char**argv)
 
 			cout << " tau = " << tau << " npassed = " << passedEventsAtTau << " passed tau/gen = " << passedEventsAtTau / passedEventsAtGen << " global eff = " << eff << endl;
 		}
+
+		// Save plots in the output file
+		auto output_file = unique_ptr<TFile>(TFile::Open("extrapolate_betaw_results.root", "RECREATE"));
+		output_file->Add(h_res_eff);
+		output_file->Write();
+
 	}
 	catch (exception &e)
 	{
