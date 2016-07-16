@@ -21,25 +21,19 @@
 #pragma warning (pop)
 
 #include "TApplication.h"
-
 #include "TMath.h"
 #include "TH2F.h"
 #include "TH1F.h"
 #include "TRandom.h"
-#include "TROOT.h"
 #include "TFile.h"
-#include "TCanvas.h"
-#include "TString.h"
 #include "TGraphAsymmErrors.h"
 #include "TTree.h"
-#include <fstream>
-#include "TRandom2.h"
 
 #include <iostream>
 #include <string>
 #include <vector>
 #include <sstream>
-
+#include <fstream>
 #include <memory>
 
 using namespace std;
