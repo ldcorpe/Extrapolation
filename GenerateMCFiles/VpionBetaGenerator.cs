@@ -4,6 +4,7 @@ using LinqToTTreeInterfacesLib;
 using LINQToTTreeLib.Files;
 using System.IO;
 using System.Linq;
+using static System.Math;
 
 namespace GenerateMCFiles
 {
@@ -24,6 +25,15 @@ namespace GenerateMCFiles
                              where evt.Data.LLPs.Count() == 2
                              let llp1 = evt.Data.LLPs[0]
                              let llp2 = evt.Data.LLPs[1]
+                             let jets = evt.Data.Jets
+                                            .Where(j => j.pT > 100.0 && Abs(j.eta) < 2.5)
+                                            .OrderByDescending(j => j.pT)
+                                            .Take(2)
+                             let j1 = jets.FirstOrDefault()
+                             let j2 = jets.Skip(1).FirstOrDefault()
+                             let isSignal = jets.Count() != 2 
+                                ? false
+                                : j1.logRatio > 1.2 && j2.logRatio > 1.2 && j1.nTrk == 0 && j2.nTrk == 0
                              select new VpionData
                              {
                                  PassedCalRatio = evt.Data.event_passCalRatio_TAU60,
@@ -37,9 +47,9 @@ namespace GenerateMCFiles
                                  vpi2_phi = llp2.phi,
                                  vpi2_pt = llp2.pT,
                                  vpi2_Lxy = llp2.Lxy,
-                                 weight = 1.0,
+                                 event_weight = evt.Data.eventWeight,
                                  // TODO: get from Emma how to do this correctly (once we figure it out!!)
-                                 IsInSignalRegion = true
+                                 IsInSignalRegion = isSignal
                              };
 
             // Now, write it out to a file.
@@ -66,7 +76,7 @@ namespace GenerateMCFiles
             public double vpi2_phi;
             public double vpi2_E;
             public double vpi2_Lxy;
-            public double weight;
+            public double event_weight;
             public bool IsInSignalRegion;
         }
 
