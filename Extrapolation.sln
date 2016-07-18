@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateMCFiles", "Generate
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExtrapolateByBeta", "ExtrapolateByBeta\ExtrapolateByBeta.vcxproj", "{C5EEA94B-6DE6-4101-BFD4-C6D51BA97041}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PlotSingleLimit", "PlotSingleLimit\PlotSingleLimit.vcxproj", "{3D66920A-20E6-4258-B43A-D4F4583E8BC3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -27,6 +29,12 @@ Global
 		{C5EEA94B-6DE6-4101-BFD4-C6D51BA97041}.Release|x64.ActiveCfg = Release|Win32
 		{C5EEA94B-6DE6-4101-BFD4-C6D51BA97041}.Release|x86.ActiveCfg = Release|Win32
 		{C5EEA94B-6DE6-4101-BFD4-C6D51BA97041}.Release|x86.Build.0 = Release|Win32
+		{3D66920A-20E6-4258-B43A-D4F4583E8BC3}.Debug|x64.ActiveCfg = Debug|Win32
+		{3D66920A-20E6-4258-B43A-D4F4583E8BC3}.Debug|x86.ActiveCfg = Debug|Win32
+		{3D66920A-20E6-4258-B43A-D4F4583E8BC3}.Debug|x86.Build.0 = Debug|Win32
+		{3D66920A-20E6-4258-B43A-D4F4583E8BC3}.Release|x64.ActiveCfg = Release|Win32
+		{3D66920A-20E6-4258-B43A-D4F4583E8BC3}.Release|x86.ActiveCfg = Release|Win32
+		{3D66920A-20E6-4258-B43A-D4F4583E8BC3}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
