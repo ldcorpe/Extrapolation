@@ -55,7 +55,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_ITERATOR_DEBUG_LEVEL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -89,6 +89,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\ROOT.534.36.13\build\native\ROOT.targets" Condition="Exists('..\packages\ROOT.534.36.13\build\native\ROOT.targets')" />
+    <Import Project="..\packages\WildCommandLine.1.0.2.0\build\native\WildCommandLine.targets" Condition="Exists('..\packages\WildCommandLine.1.0.2.0\build\native\WildCommandLine.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -96,5 +97,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\ROOT.534.36.13\build\native\ROOT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ROOT.534.36.13\build\native\ROOT.props'))" />
     <Error Condition="!Exists('..\packages\ROOT.534.36.13\build\native\ROOT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ROOT.534.36.13\build\native\ROOT.targets'))" />
+    <Error Condition="!Exists('..\packages\WildCommandLine.1.0.2.0\build\native\WildCommandLine.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WildCommandLine.1.0.2.0\build\native\WildCommandLine.targets'))" />
   </Target>
 </Project>
