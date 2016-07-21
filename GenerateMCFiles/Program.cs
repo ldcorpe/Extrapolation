@@ -31,8 +31,8 @@ namespace GenerateMCFiles
             // Next, for each dataset, write out the files.
             foreach (var ds in opt.Datasets)
             {
-                WriteLine($"Looking at {ds}.");
-                GenerateExtrapolationMCFiles(ds);
+                WriteLine($"Looking at {ds.Trim()}.");
+                GenerateExtrapolationMCFiles(ds.Trim());
             }
         }
 
