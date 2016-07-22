@@ -2,6 +2,7 @@
 using LINQToTreeHelpers.FutureUtils;
 using LinqToTTreeInterfacesLib;
 using LINQToTTreeLib.Files;
+using System;
 using System.IO;
 using System.Linq;
 using static System.Math;
@@ -13,8 +14,9 @@ namespace GenerateMCFiles
         /// <summary>
         /// Generate a ROOT file that will have all the MC events in them along with the vpion stuff.
         /// </summary>
-        /// <param name="sample"></param>
-        public static IFutureValue<FileInfo> CreateVpionROOTFiles (this SampleMetaData sample)
+        /// <param name="sample">The sample of data to skim</param>
+        /// <param name="namePostfix">The output filename post-fix we should add.</param>
+        public static IFutureValue<FileInfo> CreateVpionROOTFiles (this SampleMetaData sample, string namePostfix)
         {
             // Get the sample file
             var file = Files.GetSampleAsMetaData(sample);
@@ -57,7 +59,21 @@ namespace GenerateMCFiles
                 .FutureAsTTree(treeName: "extrapTree", treeTitle: "Used as input for the extrapolation");
 
             // Return only the first file - as there should be no more than that!
-            return from flst in f select flst.First();
+            return f
+                .Select(flst =>
+                    {
+                        if (flst.Length != 1)
+                        {
+                            throw new ArgumentException($"Got more than one file back when running LLP Extrapolation ntuple (found {flst.Length}!");
+                        }
+                        return flst;
+                    })
+                 .Select(flst => flst[0])
+                 .Select(fspec =>
+                 {
+                     var fnew = new FileInfo(Path.Combine(fspec.DirectoryName, $"LLPExtrapolationMCTree-{namePostfix}{fspec.Extension}"));
+                     return fspec.CopyTo(fnew.FullName);
+                 });
         }
 
         /// <summary>

@@ -26,7 +26,7 @@ namespace GenerateMCFiles
             // Generate the ROOT file(s) that contain the basic vpion information for every event that is needed
             // to create the extrapolation.
 
-            var f = dsSpec.CreateVpionROOTFiles();
+            var f = dsSpec.CreateVpionROOTFiles(ds);
             WriteLine(f.Value.FullName);
         }
     }
