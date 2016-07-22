@@ -21,9 +21,9 @@ Lxy_weight_calculator::Lxy_weight_calculator(const muon_tree_processor &reader)
 	passed->Sumw2();
 
 	reader.process_all_entries([&generated, &passed](const muon_tree_processor::eventInfo &entry) {
-		generated->Fill(entry.vpi1_Lxy, entry.vpi2_Lxy);
+		generated->Fill(entry.vpi1_Lxy/1000.0, entry.vpi2_Lxy/1000.0);
 		if (entry.IsInSignalRegion) {
-			passed->Fill(entry.vpi1_Lxy, entry.vpi2_Lxy);
+			passed->Fill(entry.vpi1_Lxy/1000.0, entry.vpi2_Lxy/1000.0);
 		}
 	});
 
@@ -45,28 +45,3 @@ double Lxy_weight_calculator::operator()(double lxy1, double lxy2) const
 	int xbin = _pass_weight->FindBin(lxy1, lxy2);
 	return _pass_weight->GetBinContent(xbin);
 }
-
-#ifdef notyet
-// THIS CODE is from Run 1
-// Controls how we calc in/out.
-bool lxyUseEffWeight = false;
-
-// Do a square weight calculation.
-double lxy1DWeight(double L2D)
-{
-	return L2D < 3.88 && L2D > 2.28 ? 1.0 : 0.0; // From an email from Daniela
-												 //return L2D < 4.25 && L2D > 2.25 ? 1.0 : 0.0; // Original
-}
-
-// Calc the weight for an lxy guy to be in the proper region.
-double lxyWeight(double L2D1, double L2D2) {
-	if (lxyUseEffWeight) {
-		// look up in the weight histogram
-		int xbin = ef12->FindBin(L2D1, L2D2);
-		return ef12->GetBinContent(xbin);
-	}
-	else {
-		return lxy1DWeight(L2D1) * lxy1DWeight(L2D2);
-	}
-}
-#endif

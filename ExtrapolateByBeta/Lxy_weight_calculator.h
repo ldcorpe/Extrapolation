@@ -19,6 +19,11 @@ public:
 
 	double operator() (double lxy1, double lxy2) const;
 
+	// Return a copy, and the caller will own it
+	std::unique_ptr<TH2D> clone_weight() const {
+		return std::unique_ptr<TH2D>(static_cast<TH2D*>(_pass_weight->Clone()));
+	}
+
 private:
 	std::unique_ptr<TH2D> _pass_weight;
 };

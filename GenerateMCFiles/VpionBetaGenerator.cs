@@ -86,11 +86,19 @@ namespace GenerateMCFiles
             public double vpi1_eta;
             public double vpi1_phi;
             public double vpi1_E;
+
+            /// <summary>
+            ///  The Lxy of the vpion, in mm
+            /// </summary>
             public double vpi1_Lxy;
             public double vpi2_pt;
             public double vpi2_eta;
             public double vpi2_phi;
             public double vpi2_E;
+
+            /// <summary>
+            ///  The Lxy of the vpion, in mm
+            /// </summary>
             public double vpi2_Lxy;
             public double event_weight;
             public bool IsInSignalRegion;

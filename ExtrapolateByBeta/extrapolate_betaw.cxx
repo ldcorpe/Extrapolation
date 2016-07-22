@@ -120,8 +120,8 @@ int main(int argc, char**argv)
 		// Save plots in the output file
 		auto output_file = unique_ptr<TFile>(TFile::Open("extrapolate_betaw_results.root", "RECREATE"));
 		output_file->Add(h_res_eff);
+		//output_file->Add(lxy_weight.clone_weight().release());
 		output_file->Write();
-
 	}
 	catch (exception &e)
 	{
@@ -156,7 +156,7 @@ variable_binning_builder PopulateTauTable()
 {
 	variable_binning_builder r(0.0);
 #ifdef TEST_RUN
-	r.bin_up_to(200.0, 5.0);
+	r.bin_up_to(1.0, 0.05);
 #else
 	r.bin_up_to(0.6, 0.005);
 	r.bin_up_to(4.0, 0.05);
