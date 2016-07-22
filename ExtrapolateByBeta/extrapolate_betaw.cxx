@@ -156,7 +156,7 @@ variable_binning_builder PopulateTauTable()
 {
 	variable_binning_builder r(0.0);
 #ifdef TEST_RUN
-	r.bin_up_to(50.0, 5.0);
+	r.bin_up_to(200.0, 5.0);
 #else
 	r.bin_up_to(0.6, 0.005);
 	r.bin_up_to(4.0, 0.05);
