@@ -72,7 +72,7 @@ namespace GenerateMCFiles
                  .Select(fspec =>
                  {
                      var fnew = new FileInfo(Path.Combine(fspec.DirectoryName, $"LLPExtrapolationMCTree-{namePostfix}{fspec.Extension}"));
-                     return fspec.CopyTo(fnew.FullName);
+                     return fspec.CopyTo(fnew.FullName, true);
                  });
         }
 
