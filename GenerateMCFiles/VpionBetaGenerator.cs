@@ -24,6 +24,10 @@ namespace GenerateMCFiles
 
             // Create the data we are going to write out. Every single event
             // has to be written out.
+            // TODO:
+            //   - Change to BDT13Lxy
+            //   - Change to using BDT ordered jets
+            //  Both of these require upgrading to the next version of the TTree, sadly.
             var dataStream = from evt in file
                              where evt.Data.LLPs.Count() == 2
                              let llp1 = evt.Data.LLPs[0]
@@ -38,6 +42,10 @@ namespace GenerateMCFiles
                                 ? false
                                 : SelectionHelpers.eventSelection(j1.pT, j2.pT, j1.eta, j2.eta, j1.isGoodLLP, j2.isGoodLLP,
                                     j1.phi, j2.phi, j1.CalibJet_time, j2.CalibJet_time, evt.Data.event_HTMiss, evt.Data.event_HT)
+                             let minDR2Sum = jets.Where(j => j.pT > 50.0 && Abs(j.eta) < 2.5).Sum(j => j.CalibJet_minDRTrkpt2)
+                             let region = jets.Count() != 2
+                                ? 0
+                                : SelectionHelpers.ABCDPlane(j1.pT, j2.pT, j1.CalibJet_BDT, j2.CalibJet_BDT, minDR2Sum)
                              select new VpionData
                              {
                                  PassedCalRatio = evt.Data.event_passCalRatio_TAU60,
@@ -53,10 +61,10 @@ namespace GenerateMCFiles
                                  vpi2_Lxy = llp2.Lxy,
                                  event_weight = evt.Data.eventWeight,
                                  // TODO: get from Emma how to do this correctly (once we figure it out!!)
-                                 RegionA = isSelected,
-                                 RegionB = false,
-                                 RegionC = false,
-                                 RegionD = false
+                                 RegionA = region == 1,
+                                 RegionB = region == 2,
+                                 RegionC = region == 3,
+                                 RegionD = region == 4
                              };
 
             // Now, write it out to a file.
@@ -164,7 +172,7 @@ namespace GenerateMCFiles
             throw new InvalidOperationException("Should never get called by C# code!");
         }
 
-        [CPPCode(IncludeFiles = new[] { "CalRSelection.h" }, Code = new[]
+        [CPPCode(IncludeFiles = new[] { @"C:\Users\gordo\Documents\Code\calratio2015\CalRSkimmer\CalRSelection.h" }, Code = new[]
         {
             "ABCDPlane = event_ABCD_plane(j1_pt, j2_pt, j1_bdt13lxy, j2_bdt13lxy, sumMinDRTrk2pt50);"
         })]
