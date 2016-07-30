@@ -1,6 +1,7 @@
 ﻿using libDataAccess;
 using LINQToTreeHelpers.FutureUtils;
 using LinqToTTreeInterfacesLib;
+using LINQToTTreeLib.CodeAttributes;
 using LINQToTTreeLib.Files;
 using System;
 using System.IO;
@@ -16,7 +17,7 @@ namespace GenerateMCFiles
         /// </summary>
         /// <param name="sample">The sample of data to skim</param>
         /// <param name="namePostfix">The output filename post-fix we should add.</param>
-        public static IFutureValue<FileInfo> CreateVpionROOTFiles (this SampleMetaData sample, string namePostfix)
+        public static IFutureValue<FileInfo> CreateVpionROOTFiles(this SampleMetaData sample, string namePostfix)
         {
             // Get the sample file
             var file = Files.GetSampleAsMetaData(sample);
@@ -33,9 +34,10 @@ namespace GenerateMCFiles
                                             .Take(2)
                              let j1 = jets.FirstOrDefault()
                              let j2 = jets.Skip(1).FirstOrDefault()
-                             let isSignal = jets.Count() != 2 
+                             let isSelected = jets.Count() != 2
                                 ? false
-                                : j1.logRatio > 1.2 && j2.logRatio > 1.2 && j1.nTrk == 0 && j2.nTrk == 0
+                                : SelectionHelpers.eventSelection(j1.pT, j2.pT, j1.eta, j2.eta, j1.isGoodLLP, j2.isGoodLLP,
+                                    j1.phi, j2.phi, j1.CalibJet_time, j2.CalibJet_time, evt.Data.event_HTMiss, evt.Data.event_HT)
                              select new VpionData
                              {
                                  PassedCalRatio = evt.Data.event_passCalRatio_TAU60,
@@ -51,7 +53,7 @@ namespace GenerateMCFiles
                                  vpi2_Lxy = llp2.Lxy,
                                  event_weight = evt.Data.eventWeight,
                                  // TODO: get from Emma how to do this correctly (once we figure it out!!)
-                                 RegionA = isSignal,
+                                 RegionA = isSelected,
                                  RegionB = false,
                                  RegionC = false,
                                  RegionD = false
@@ -121,6 +123,57 @@ namespace GenerateMCFiles
             public bool RegionC;
             public bool RegionD;
         }
+    }
 
+    /// <summary>
+    /// There is C++ code that we share with everyone else. Use it here to make sure that
+    /// the official selection cuts are identical everywhere in the analyiss.
+    /// </summary>
+    [CPPHelperClass()]
+    class SelectionHelpers
+    {
+        /// <summary>
+        /// Determine if the event is in the analysis (or not). J1 and J2 ordering are by BDT ordering, not
+        /// by pT ordering as is standard in most analyses.
+        /// </summary>
+        /// <param name="j1_pt"></param>
+        /// <param name="j2_pt"></param>
+        /// <param name="j1_eta"></param>
+        /// <param name="j2_eta"></param>
+        /// <param name="j1_isGoodLLP"></param>
+        /// <param name="j2_isGoodLLP"></param>
+        /// <param name="j1_phi"></param>
+        /// <param name="j2_phi"></param>
+        /// <param name="j1_time"></param>
+        /// <param name="j2_time"></param>
+        /// <param name="event_HTMiss"></param>
+        /// <param name="event_HT"></param>
+        /// <returns></returns>
+        [CPPCode(IncludeFiles = new[] { @"C:\Users\gordo\Documents\Code\calratio2015\CalRSkimmer\CalRSelection.h" }, Code = new[]
+        {
+            "eventSelection = event_selection(j1_pt, j2_pt, j1_eta, j2_eta, j1_isGoodLLP, j2_isGoodLLP, j1_phi, j2_phi, j1_time, j2_time, event_HTMiss, event_HT);"
+        })]
+        public static bool eventSelection(
+            double j1_pt, double j2_pt,
+            double j1_eta, double j2_eta,
+            bool j1_isGoodLLP, bool j2_isGoodLLP,
+            double j1_phi, double j2_phi,
+            double j1_time, double j2_time,
+            double event_HTMiss, double event_HT)
+        {
+            throw new InvalidOperationException("Should never get called by C# code!");
+        }
+
+        [CPPCode(IncludeFiles = new[] { "CalRSelection.h" }, Code = new[]
+        {
+            "ABCDPlane = event_ABCD_plane(j1_pt, j2_pt, j1_bdt13lxy, j2_bdt13lxy, sumMinDRTrk2pt50);"
+        })]
+        public static int ABCDPlane(
+            double j1_pt, double j2_pt,
+            double j1_bdt13lxy, double j2_bdt13lxy,
+            double sumMinDRTrk2pt50)
+        {
+            throw new InvalidOperationException("Should never get called by C# code!");
+        }
     }
 }
