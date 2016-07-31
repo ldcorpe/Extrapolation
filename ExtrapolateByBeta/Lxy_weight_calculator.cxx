@@ -22,7 +22,7 @@ Lxy_weight_calculator::Lxy_weight_calculator(const muon_tree_processor &reader)
 
 	reader.process_all_entries([&generated, &passed](const muon_tree_processor::eventInfo &entry) {
 		generated->Fill(entry.vpi1_Lxy/1000.0, entry.vpi2_Lxy/1000.0);
-		if (entry.IsInSignalRegion) {
+		if (entry.RegionA) {
 			passed->Fill(entry.vpi1_Lxy/1000.0, entry.vpi2_Lxy/1000.0);
 		}
 	});

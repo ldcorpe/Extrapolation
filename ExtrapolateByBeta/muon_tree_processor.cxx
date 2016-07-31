@@ -28,7 +28,10 @@ muon_tree_processor::muon_tree_processor(const string &filename)
 	_tree->SetBranchAddress("vpi2_E", &(_tree_data.vpi2_E));
 	_tree->SetBranchAddress("vpi2_Lxy", &(_tree_data.vpi2_Lxy));
 	_tree->SetBranchAddress("event_weight", &(_tree_data.weight));
-	_tree->SetBranchAddress("IsInSignalRegion", &(_tree_data.IsInSignalRegion));
+	_tree->SetBranchAddress("RegionA", &(_tree_data.RegionA));
+	_tree->SetBranchAddress("RegionB", &(_tree_data.RegionB));
+	_tree->SetBranchAddress("RegionC", &(_tree_data.RegionC));
+	_tree->SetBranchAddress("RegionD", &(_tree_data.RegionD));
 }
 
 

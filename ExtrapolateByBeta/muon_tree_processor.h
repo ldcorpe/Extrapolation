@@ -26,7 +26,10 @@ public:
 		double vpi2_E;
 		double vpi2_Lxy;
 		double weight;
-		bool IsInSignalRegion;
+		bool RegionA;
+		bool RegionB;
+		bool RegionC;
+		bool RegionD;
 	};
 
 	//Call f for each entry in the ntuple

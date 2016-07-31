@@ -283,7 +283,7 @@ doubleError CalcPassedEvents(const muon_tree_processor &reader, const unique_ptr
 		// We are doing an event count only (e.g. the denominator) or
 		// it passes our analysis cuts (e.g. the numerator).
 		if (eventCountOnly
-			|| entry.IsInSignalRegion
+			|| entry.RegionA
 			|| (triggerOnly && entry.PassedCalRatio)
 			) {
 
