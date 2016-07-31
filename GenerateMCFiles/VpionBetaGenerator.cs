@@ -45,12 +45,13 @@ namespace GenerateMCFiles
                                 : SelectionHelpers.eventSelection(j1.pT, j2.pT, j1.eta, j2.eta, j1.isGoodLLP, j2.isGoodLLP,
                                     j1.phi, j2.phi, j1.CalibJet_time, j2.CalibJet_time, evt.Data.event_HTMiss, evt.Data.event_HT)
                              let minDR2Sum = jets.Where(j => j.pT > 50.0 && Abs(j.eta) < 2.5).Sum(j => j.CalibJet_minDRTrkpt2)
-                             let region = jets.Count() != 2
+                             let passedTrigger = evt.Data.event_passCalRatio_TAU60
+                             let region = (jets.Count() != 2)
                                 ? 0
                                 : SelectionHelpers.ABCDPlane(j1.pT, j2.pT, j1.CalibJet_BDT, j2.CalibJet_BDT, minDR2Sum)
                              select new VpionData
                              {
-                                 PassedCalRatio = evt.Data.event_passCalRatio_TAU60,
+                                 PassedCalRatio = passedTrigger,
                                  llp1_E = llp1.LLP_E,
                                  llp1_eta = llp1.eta,
                                  llp1_phi = llp1.phi,
@@ -63,10 +64,10 @@ namespace GenerateMCFiles
                                  vpi2_Lxy = llp2.Lxy,
                                  event_weight = evt.Data.eventWeight,
                                  // TODO: get from Emma how to do this correctly (once we figure it out!!)
-                                 RegionA = region == 1,
-                                 RegionB = region == 2,
-                                 RegionC = region == 3,
-                                 RegionD = region == 4
+                                 RegionA = passedTrigger && region == 1,
+                                 RegionB = passedTrigger && region == 2,
+                                 RegionC = passedTrigger && region == 3,
+                                 RegionD = passedTrigger && region == 4
                              };
 
             // Now, write it out to a file.
