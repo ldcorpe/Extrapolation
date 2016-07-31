@@ -63,7 +63,7 @@ void SetAsymError(unique_ptr<TGraphAsymmErrors> &g, int bin, double tau, double 
 int main(int argc, char**argv)
 {
 	int dummy_argc = 0;
-	auto a = unique_ptr<TApplication>(new TApplication("extrapolate_betaw", &dummy_argc, argv));
+	auto a = make_unique<TApplication>("extrapolate_betaw", &dummy_argc, argv);
 	try {
 		// Pull out the various command line arguments
 		auto config = parse_command_line(argc, argv);
@@ -91,7 +91,7 @@ int main(int argc, char**argv)
 			name_h << "h_res_eff_" << (char) ('A' + i_region);
 			h_res_eff.push_back(new TH1F(name_h.str().c_str(), name_h.str().c_str(), tau_binning.nbin(), tau_binning.bin_list()));
 
-			g_res_eff.push_back(unique_ptr<TGraphAsymmErrors>(new TGraphAsymmErrors(tau_binning.nbin())));
+			g_res_eff.push_back(make_unique<TGraphAsymmErrors>(tau_binning.nbin()));
 			ostringstream name_g;
 			name_g << "g_res_eff_" << (char) ('A' + i_region);
 			g_res_eff[i_region]->SetName(name_g.str().c_str());
@@ -247,12 +247,12 @@ pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, in
 	dname << "tau_" << tau << "_den";
 	nname << "tau_" << tau << "_num";
 	auto beta_binning(PopulateBetaBinning());
-	unique_ptr<TH2F> den(new TH2F(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
+	unique_ptr<TH2F> den(make_unique<TH2F>(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
 	vector<unique_ptr<bogus>> dork;
 	vector<unique_ptr<TH2F>> num;
 	for (int i_region = 0; i_region < 4; i_region++) {
 		nname << "A";
-		num.push_back(unique_ptr<TH2F>(new TH2F(nname.str().c_str(), nname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list())));
+		num.push_back(make_unique<TH2F>(nname.str().c_str(), nname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
 		num[i_region]->Sumw2();
 	}
 	den->Sumw2();
@@ -339,15 +339,15 @@ std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError
 	// returns the Bayesian uncertainty over the num/den ratio
 	std::pair<Double_t, Double_t> result(0., 0.);
 
-	auto h_num = unique_ptr<TH1D>(new TH1D("h_num", "", 1, 0, 1));
-	auto h_den = unique_ptr<TH1D>(new TH1D("h_den", "", 1, 0, 1));
+	auto h_num = make_unique<TH1D>("h_num", "", 1, 0, 1);
+	auto h_den = make_unique<TH1D>("h_den", "", 1, 0, 1);
 
 	h_num->SetBinContent(1, num.value());
 	h_den->SetBinContent(1, den.value());
 	h_num->SetBinError(1, num.err());
 	h_den->SetBinError(1, den.err());
 
-	auto h_eff = unique_ptr<TGraphAsymmErrors>(new TGraphAsymmErrors());
+	auto h_eff = make_unique<TGraphAsymmErrors>();
 	h_eff->BayesDivide(h_num.get(), h_den.get());//, "w"); 
 
 	result.first = h_eff->GetErrorYlow(0);
