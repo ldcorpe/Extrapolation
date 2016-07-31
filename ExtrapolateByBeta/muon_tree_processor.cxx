@@ -17,16 +17,16 @@ muon_tree_processor::muon_tree_processor(const string &filename)
 
 	// Next, link everything up
 	_tree->SetBranchAddress("PassedCalRatio", &(_tree_data.PassedCalRatio));
-	_tree->SetBranchAddress("vpi1_pt", &(_tree_data.vpi1_pt));
-	_tree->SetBranchAddress("vpi1_eta", &(_tree_data.vpi1_eta));
-	_tree->SetBranchAddress("vpi1_phi", &(_tree_data.vpi1_phi));
-	_tree->SetBranchAddress("vpi1_E", &(_tree_data.vpi1_E));
-	_tree->SetBranchAddress("vpi1_Lxy", &(_tree_data.vpi1_Lxy));
-	_tree->SetBranchAddress("vpi2_pt", &(_tree_data.vpi2_pt));
-	_tree->SetBranchAddress("vpi2_eta", &(_tree_data.vpi2_eta));
-	_tree->SetBranchAddress("vpi2_phi", &(_tree_data.vpi2_phi));
-	_tree->SetBranchAddress("vpi2_E", &(_tree_data.vpi2_E));
-	_tree->SetBranchAddress("vpi2_Lxy", &(_tree_data.vpi2_Lxy));
+	_tree->SetBranchAddress("llp1_pt", &(_tree_data.vpi1_pt));
+	_tree->SetBranchAddress("llp1_eta", &(_tree_data.vpi1_eta));
+	_tree->SetBranchAddress("llp1_phi", &(_tree_data.vpi1_phi));
+	_tree->SetBranchAddress("llp1_E", &(_tree_data.vpi1_E));
+	_tree->SetBranchAddress("llp1_Lxy", &(_tree_data.vpi1_Lxy));
+	_tree->SetBranchAddress("llp2_pt", &(_tree_data.vpi2_pt));
+	_tree->SetBranchAddress("llp2_eta", &(_tree_data.vpi2_eta));
+	_tree->SetBranchAddress("llp2_phi", &(_tree_data.vpi2_phi));
+	_tree->SetBranchAddress("llp2_E", &(_tree_data.vpi2_E));
+	_tree->SetBranchAddress("llp2_Lxy", &(_tree_data.vpi2_Lxy));
 	_tree->SetBranchAddress("event_weight", &(_tree_data.weight));
 	_tree->SetBranchAddress("RegionA", &(_tree_data.RegionA));
 	_tree->SetBranchAddress("RegionB", &(_tree_data.RegionB));

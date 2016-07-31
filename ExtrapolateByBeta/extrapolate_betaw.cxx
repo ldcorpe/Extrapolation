@@ -42,7 +42,6 @@ using namespace std;
 
 // How many loops in tau should we do?
 size_t n_tau_loops = 5;
-bool calc_trigger_only = false; // Do trigger counts only? Might eventually be an argument, but for now...
 
 // Helper methods
 struct extrapolate_config {
@@ -53,7 +52,7 @@ extrapolate_config parse_command_line(int argc, char **argv);
 variable_binning_builder PopulateTauTable();
 pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntauloops, const muon_tree_processor &mc_entries, const Lxy_weight_calculator &lxyWeight);
 template<class T> unique_ptr<T> DivideShape(const pair<unique_ptr<T>, unique_ptr<T>> &r, const string &name, const string &title);
-doubleError CalcPassedEvents(const muon_tree_processor &reader, const unique_ptr<TH2F> &weightHist, bool eventCountOnly = false, const unique_ptr<TH2F> &passHist = nullptr, bool triggerOnly = false);
+doubleError CalcPassedEvents(const muon_tree_processor &reader, const unique_ptr<TH2F> &weightHist, bool eventCountOnly = false, const unique_ptr<TH2F> &passHist = nullptr);
 std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError &den);
 void SetAsymError(unique_ptr<TGraphAsymmErrors> &g, int bin, double tau, double bvalue, const pair<double, double> &assErrors);
 
@@ -77,8 +76,8 @@ int main(int argc, char**argv)
 		// in the tau loop below.
 		auto r = GetFullBetaShape(config._tau_gen, n_tau_loops, reader, lxy_weight);
 		auto h_gen_ratio = DivideShape(r, "h_Ngen_ratio", "Fraction of events in beta space at raw generated ctau");
-		auto passedEventsAtGen = CalcPassedEvents(reader, nullptr, false, nullptr, calc_trigger_only);
-		auto totalEventsAtGen = CalcPassedEvents(reader, nullptr, true, nullptr, calc_trigger_only);
+		auto passedEventsAtGen = CalcPassedEvents(reader, nullptr, false, nullptr);
+		auto totalEventsAtGen = CalcPassedEvents(reader, nullptr, true, nullptr);
 
 		// Create the histograms we will use to store the raw results.
 		auto tau_binning = PopulateTauTable();
@@ -102,7 +101,7 @@ int main(int argc, char**argv)
 			h_Nratio->Divide(h_gen_ratio.get());
 
 			// Next, re-calc the efficiency given the new beta map.
-			auto passedEventsAtTau = CalcPassedEvents(reader, h_Nratio, false, nullptr, calc_trigger_only);
+			auto passedEventsAtTau = CalcPassedEvents(reader, h_Nratio, false, nullptr);
 			doubleError relativeEff = passedEventsAtTau / passedEventsAtGen;
 			doubleError eff = passedEventsAtTau / totalEventsAtGen;
 
@@ -259,7 +258,7 @@ unique_ptr<T> DivideShape(const pair<unique_ptr<T>, unique_ptr<T>> &r, const str
 }
 
 // Calculate the number of events that pass our cuts (possibly weighted).
-doubleError CalcPassedEvents(const muon_tree_processor &reader, const unique_ptr<TH2F> &weightHist, bool eventCountOnly, const unique_ptr<TH2F> &passHist, bool triggerOnly)
+doubleError CalcPassedEvents(const muon_tree_processor &reader, const unique_ptr<TH2F> &weightHist, bool eventCountOnly, const unique_ptr<TH2F> &passHist)
 {
 	doubleError nEvents; // This will be the number of events in the TTree (without gluons)
 
@@ -269,7 +268,7 @@ doubleError CalcPassedEvents(const muon_tree_processor &reader, const unique_ptr
 
 	// Calculate the event weight. A combination of the pile up reweighting from the ntuple and perhaps
 	// the beta re-weighting from the input histogram.
-	reader.process_all_entries([&weightHist, eventCountOnly, triggerOnly, &nEvents, &passHist](const muon_tree_processor::eventInfo &entry) {
+	reader.process_all_entries([&weightHist, eventCountOnly, &nEvents, &passHist](const muon_tree_processor::eventInfo &entry) {
 
 		doubleError weight(entry.weight, entry.weight);
 
@@ -284,7 +283,6 @@ doubleError CalcPassedEvents(const muon_tree_processor &reader, const unique_ptr
 		// it passes our analysis cuts (e.g. the numerator).
 		if (eventCountOnly
 			|| entry.RegionA
-			|| (triggerOnly && entry.PassedCalRatio)
 			) {
 
 			nEvents += weight;

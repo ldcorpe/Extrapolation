@@ -61,7 +61,7 @@ namespace GenerateMCFiles
                                  llp2_eta = llp2.eta,
                                  llp2_phi = llp2.phi,
                                  llp2_pt = llp2.pT,
-                                 vpi2_Lxy = llp2.Lxy,
+                                 llp2_Lxy = llp2.Lxy,
                                  event_weight = evt.Data.eventWeight,
                                  // TODO: get from Emma how to do this correctly (once we figure it out!!)
                                  RegionA = passedTrigger && region == 1,
@@ -127,7 +127,7 @@ namespace GenerateMCFiles
             public double llp2_eta;
             public double llp2_phi;
             public double llp2_E;
-            public double vpi2_Lxy;
+            public double llp2_Lxy;
 
             /// <summary>
             /// Any MC event wight
