@@ -15,12 +15,11 @@
 #include "Lxy_weight_calculator.h"
 #include "beta_cache.h"
 
+#include "TApplication.h"
 #pragma warning (push)
 #pragma warning (disable: 4244)
 #include "TLorentzVector.h"
 #pragma warning (pop)
-
-#include "TApplication.h"
 #include "TMath.h"
 #include "TH2F.h"
 #include "TH1F.h"
@@ -50,9 +49,11 @@ struct extrapolate_config {
 };
 extrapolate_config parse_command_line(int argc, char **argv);
 variable_binning_builder PopulateTauTable();
-pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntauloops, const muon_tree_processor &mc_entries, const Lxy_weight_calculator &lxyWeight);
-template<class T> unique_ptr<T> DivideShape(const pair<unique_ptr<T>, unique_ptr<T>> &r, const string &name, const string &title);
-doubleError CalcPassedEvents(const muon_tree_processor &reader, const unique_ptr<TH2F> &weightHist, bool eventCountOnly = false, const unique_ptr<TH2F> &passHist = nullptr);
+pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntauloops, const muon_tree_processor &mc_entries, const Lxy_weight_calculator &lxyWeight);
+template<class T> vector<unique_ptr<T>> DivideShape(
+	const pair<vector<unique_ptr<T>>, unique_ptr<T>> &r,
+	const string &name, const string &title);
+vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const vector<unique_ptr<TH2F>> &weightHist, bool eventCountOnly = false);
 std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError &den);
 void SetAsymError(unique_ptr<TGraphAsymmErrors> &g, int bin, double tau, double bvalue, const pair<double, double> &assErrors);
 
@@ -76,50 +77,68 @@ int main(int argc, char**argv)
 		// in the tau loop below.
 		auto r = GetFullBetaShape(config._tau_gen, n_tau_loops, reader, lxy_weight);
 		auto h_gen_ratio = DivideShape(r, "h_Ngen_ratio", "Fraction of events in beta space at raw generated ctau");
-		auto passedEventsAtGen = CalcPassedEvents(reader, nullptr, false, nullptr);
-		auto totalEventsAtGen = CalcPassedEvents(reader, nullptr, true, nullptr);
+		auto passedEventsAtGen = CalcPassedEvents(reader, vector<unique_ptr<TH2F>> (), false);
+		auto totalEventsAtGen = CalcPassedEvents(reader, vector<unique_ptr<TH2F>>(), true);
 
 		// Create the histograms we will use to store the raw results.
 		auto tau_binning = PopulateTauTable();
-		auto h_res_eff = new TH1F("h_res_eff", "h_res_eff", tau_binning.nbin(), tau_binning.bin_list()); //Efficiency VS lifetime
+		vector<TH1F*> h_res_eff;
+		vector<unique_ptr<TGraphAsymmErrors>> g_res_eff;
 
-		auto g_res_eff = unique_ptr<TGraphAsymmErrors>(new TGraphAsymmErrors(tau_binning.nbin()));
-		g_res_eff->SetName("g_res_eff");
-		g_res_eff->SetTitle("Absolute efficiency to the generated analysis");
+		for (int i_region = 0; i_region < 4; i_region++) {
+			//Efficiency VS lifetime
+			ostringstream name_h;
+			name_h << "h_res_eff_" << (char) ('A' + i_region);
+			h_res_eff.push_back(new TH1F(name_h.str().c_str(), name_h.str().c_str(), tau_binning.nbin(), tau_binning.bin_list()));
+
+			g_res_eff.push_back(unique_ptr<TGraphAsymmErrors>(new TGraphAsymmErrors(tau_binning.nbin())));
+			ostringstream name_g;
+			name_g << "g_res_eff_" << (char) ('A' + i_region);
+			g_res_eff[i_region]->SetName(name_g.str().c_str());
+			ostringstream title_g;
+			title_g << "Absolute efficiency to the generated analysis for region " << (char) ('A' + i_region);
+			g_res_eff[i_region]->SetTitle(title_g.str().c_str());
+		}
 
 		// Loop over proper lifetime
 		for (unsigned int i_tau = 0; i_tau < tau_binning.nbin(); i_tau++) {
-			auto tau = h_res_eff->GetBinCenter(i_tau+1); // Recal ROOT indicies bins at 1
+			auto tau = h_res_eff[0]->GetBinCenter(i_tau+1); // Recal ROOT indicies bins at 1
 
 			// Get the full Beta shape
-			auto r = GetFullBetaShape(tau, n_tau_loops, reader, lxy_weight);
-			auto h_caut_ratio = DivideShape(r, "h_caut_ratio", "h_caut_ratio");
+			auto rtau = GetFullBetaShape(tau, n_tau_loops, reader, lxy_weight);
+			auto h_caut_ratio = DivideShape(rtau, "h_caut_ratio", "h_caut_ratio");
 
 			// Now, create a weighting histogram. This is just the differece between the numerators at the
 			// extrapolated ctau and at the generated ctau
-			auto h_Nratio = unique_ptr<TH2F>(static_cast<TH2F*>(h_caut_ratio->Clone()));
-			h_Nratio->Divide(h_gen_ratio.get());
+			decltype(h_caut_ratio) h_Nratio;
+			for (int i_region = 0; i_region < 4; i_region++) {
+				auto h = unique_ptr<TH2F>(static_cast<TH2F*>(h_caut_ratio[i_region]->Clone()));
+				h->Divide(h_gen_ratio[i_region].get());
+				h_Nratio.push_back(move(h));
+			}
 
-			// Next, re-calc the efficiency given the new beta map.
-			auto passedEventsAtTau = CalcPassedEvents(reader, h_Nratio, false, nullptr);
-			doubleError relativeEff = passedEventsAtTau / passedEventsAtGen;
-			doubleError eff = passedEventsAtTau / totalEventsAtGen;
+			// The the number of events that passed for this lifetime.
+			auto passedEventsAtTau = CalcPassedEvents(reader, h_Nratio, false);
 
 			// Calculate proper asymmetric errors and save the extrapolation result for the change in efficency.
-			std::pair<Double_t, Double_t> bayerr_sig_perc = getBayes(passedEventsAtTau, totalEventsAtGen);
-			Double_t erro = (bayerr_sig_perc.first + bayerr_sig_perc.second)*0.5;
+			for (int i_region = 0; i_region < 4; i_region++) {
+				doubleError eff = passedEventsAtTau[i_region] / totalEventsAtGen[i_region];
+				std::pair<Double_t, Double_t> bayerr_sig_perc = getBayes(passedEventsAtTau[i_region], totalEventsAtGen[i_region]);
+				Double_t erro = (bayerr_sig_perc.first + bayerr_sig_perc.second)*0.5;
 
-			h_res_eff->SetBinContent(i_tau + 1, eff.value());
-			h_res_eff->SetBinError(i_tau + 1, erro);
-			SetAsymError(g_res_eff, i_tau, tau, eff.value(), bayerr_sig_perc);
+				h_res_eff[i_region]->SetBinContent(i_tau + 1, eff.value());
+				h_res_eff[i_region]->SetBinError(i_tau + 1, erro);
+				SetAsymError(g_res_eff[i_region], i_tau, tau, eff.value(), bayerr_sig_perc);
+			}
 
-			cout << " tau = " << tau << " npassed = " << passedEventsAtTau << " passed tau/gen = " << passedEventsAtTau / passedEventsAtGen << " global eff = " << eff << endl;
+			cout << " tau = " << tau << " npassed = " << passedEventsAtTau[0] << " passed tau/gen = " << passedEventsAtTau[0] / passedEventsAtGen[0] << " global eff = " << passedEventsAtTau[0] / totalEventsAtGen[0] << endl;
 		}
 
 		// Save plots in the output file
 		auto output_file = unique_ptr<TFile>(TFile::Open("extrapolate_betaw_results.root", "RECREATE"));
-		output_file->Add(h_res_eff);
-		//output_file->Add(lxy_weight.clone_weight().release());
+		for (int i_region = 0; i_region < 4; i_region++) {
+			output_file->Add(h_res_eff[i_region]);
+		}
 		output_file->Write();
 	}
 	catch (exception &e)
@@ -210,10 +229,17 @@ void doSR(TLorentzVector vpi1, TLorentzVector vpi2, Double_t tau, Double_t &beta
 	return;
 }
 
+class bogus
+{
+public:
+	bogus() {}
+
+};
+
 // Generate a lxy1 and lxy2 set of histograms. The denominator (first item) is
 // the generated ones. The numerator is modified by the acceptance histogram
 // built from the input file.
-pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntauloops, const muon_tree_processor &mc_entries, const Lxy_weight_calculator &lxyWeight)
+pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntauloops, const muon_tree_processor &mc_entries, const Lxy_weight_calculator &lxyWeight)
 {
 	// Create numerator and denominator histograms.
 	// To avoid annoying ROOT error messages, make a unique name for each.
@@ -221,10 +247,15 @@ pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntaulo
 	dname << "tau_" << tau << "_den";
 	nname << "tau_" << tau << "_num";
 	auto beta_binning(PopulateBetaBinning());
-	unique_ptr<TH2F> den (new TH2F(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
-	unique_ptr<TH2F> num(new TH2F(nname.str().c_str(), nname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
+	unique_ptr<TH2F> den(new TH2F(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
+	vector<unique_ptr<bogus>> dork;
+	vector<unique_ptr<TH2F>> num;
+	for (int i_region = 0; i_region < 4; i_region++) {
+		nname << "A";
+		num.push_back(unique_ptr<TH2F>(new TH2F(nname.str().c_str(), nname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list())));
+		num[i_region]->Sumw2();
+	}
 	den->Sumw2();
-	num->Sumw2();
 
 	// Loop over each MC entry, and generate tau's at several different places
 	mc_entries.process_all_entries([&den, &num, ntauloops, tau, &lxyWeight](const muon_tree_processor::eventInfo &entry) {
@@ -239,7 +270,9 @@ pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntaulo
 			doSR(vpi1, vpi2, tau, beta1, beta2, L2D1, L2D2); // Do special relativity
 
 			den->Fill(beta1, beta2, entry.weight);
-			num->Fill(beta1, beta2, entry.weight * lxyWeight(L2D1, L2D2));
+			for (int i_region = 0; i_region < 4; i_region++) {
+				num[i_region]->Fill(beta1, beta2, entry.weight * lxyWeight(i_region, L2D1, L2D2));
+			}
 		}
 	});
 
@@ -248,45 +281,53 @@ pair<unique_ptr<TH2F>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntaulo
 
 // Calculate a 2D efficiency given a denominator and the numerator selected from the denominator
 template<class T>
-unique_ptr<T> DivideShape(const pair<unique_ptr<T>, unique_ptr<T>> &r, const string &name, const string &title)
+vector<unique_ptr<T>> DivideShape(const pair<vector<unique_ptr<T>>, unique_ptr<T>> &r, const string &name, const string &title)
 {
-	unique_ptr<T> ratio (static_cast<T*>(r.first->Clone()));
-	ratio->Divide(r.first.get(), r.second.get(), 1.0, 1.0, "B");
-	ratio->SetNameTitle(name.c_str(), title.c_str());
+	vector<unique_ptr<T>> result;
+	for (auto &info : r.first) {
+		unique_ptr<T> ratio(static_cast<T*>(info->Clone()));
+		ratio->Divide(info.get(), r.second.get(), 1.0, 1.0, "B");
+		ratio->SetNameTitle(name.c_str(), title.c_str());
+		result.push_back(move(ratio));
+	}
 
-	return ratio;
+	return result;
 }
 
 // Calculate the number of events that pass our cuts (possibly weighted).
-doubleError CalcPassedEvents(const muon_tree_processor &reader, const unique_ptr<TH2F> &weightHist, bool eventCountOnly, const unique_ptr<TH2F> &passHist)
+vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const vector<unique_ptr<TH2F>> &weightHist, bool eventCountOnly)
 {
-	doubleError nEvents; // This will be the number of events in the TTree (without gluons)
-
-	if (passHist) {
-		passHist->Sumw2();
-	}
+	vector<doubleError> nEvents(4); // This will be the number of events in the TTree (without gluons)
 
 	// Calculate the event weight. A combination of the pile up reweighting from the ntuple and perhaps
 	// the beta re-weighting from the input histogram.
-	reader.process_all_entries([&weightHist, eventCountOnly, &nEvents, &passHist](const muon_tree_processor::eventInfo &entry) {
+	reader.process_all_entries([&weightHist, eventCountOnly, &nEvents](const muon_tree_processor::eventInfo &entry) {
 
-		doubleError weight(entry.weight, entry.weight);
+		for (int i_region = 0; i_region < 4; i_region++) {
 
-		beta_cache b (entry);
-		if (weightHist) {
-			int nbin = weightHist->FindBin(b.beta1(), b.beta2());
-			weight *= doubleError(weightHist->GetBinContent(nbin), weightHist->GetBinError(nbin));
-		}
+			// TODO: is this the right way to do an error here? Does it propagate so do we care?
+			doubleError weight(entry.weight, entry.weight);
 
-		// Count the event and populate the output histogram, if
-		// We are doing an event count only (e.g. the denominator) or
-		// it passes our analysis cuts (e.g. the numerator).
-		if (eventCountOnly
-			|| entry.RegionA
-			) {
+			beta_cache b(entry);
+			if (weightHist.size() > 0) {
+				int nbin = weightHist[i_region]->FindBin(b.beta1(), b.beta2());
+				weight *= doubleError(weightHist[i_region]->GetBinContent(nbin), weightHist[i_region]->GetBinError(nbin));
+			}
 
-			nEvents += weight;
-			if (passHist) passHist->Fill(b.beta1(), b.beta2(), weight.value());
+			// Count the event and populate the output histogram, if
+			// We are doing an event count only (e.g. the denominator) or
+			// it passes our analysis cuts (e.g. the numerator).
+			auto inRegion =
+				i_region == 0 ? entry.RegionA
+				: i_region == 1 ? entry.RegionB
+				: i_region == 2 ? entry.RegionC
+				: entry.RegionD;
+			if (eventCountOnly
+				|| inRegion
+				) {
+
+				nEvents[i_region] += weight;
+			}
 		}
 	});
 

@@ -17,14 +17,18 @@ public:
 	Lxy_weight_calculator(const muon_tree_processor &reader);
 	~Lxy_weight_calculator();
 
-	double operator() (double lxy1, double lxy2) const;
+	// Region can be 0 == A, 1 == B, 2 == C, 3 == D
+	double operator() (int region, double lxy1, double lxy2) const;
 
 	// Return a copy, and the caller will own it
-	std::unique_ptr<TH2D> clone_weight() const {
-		return std::unique_ptr<TH2D>(static_cast<TH2D*>(_pass_weight->Clone()));
+	std::unique_ptr<TH2D> clone_weight(int region) const {
+		if (region < 0 || region > 3) {
+			throw std::runtime_error("Illegial region number");
+		}
+		return std::unique_ptr<TH2D>(static_cast<TH2D*>(_pass_weight[region]->Clone()));
 	}
 
 private:
-	std::unique_ptr<TH2D> _pass_weight;
+	std::unique_ptr<TH2D> _pass_weight[4];
 };
 

@@ -4,7 +4,10 @@
 #pragma once
 
 #include "muon_tree_processor.h"
+#pragma warning (push)
+#pragma warning (disable: 4244)
 #include "TLorentzVector.h"
+#pragma warning (pop)
 
 class beta_cache {
 public:
