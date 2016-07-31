@@ -34,6 +34,8 @@ namespace GenerateMCFiles
                 WriteLine($"Looking at {ds}.");
                 GenerateExtrapolationMCFiles(ds); 
             }
+
+            FutureConsole.DumpToCout();
         }
 
     }

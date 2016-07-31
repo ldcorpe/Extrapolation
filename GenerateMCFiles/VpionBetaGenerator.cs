@@ -1,6 +1,8 @@
 ﻿using libDataAccess;
+using libDataAccess.Utils;
 using LINQToTreeHelpers.FutureUtils;
 using LinqToTTreeInterfacesLib;
+using LINQToTTreeLib;
 using LINQToTTreeLib.CodeAttributes;
 using LINQToTTreeLib.Files;
 using System;
@@ -70,6 +72,15 @@ namespace GenerateMCFiles
             // Now, write it out to a file.
             var f = dataStream
                 .FutureAsTTree(treeName: "extrapTree", treeTitle: "Used as input for the extrapolation");
+
+            // Total up everything for final numbers, and dump it out.
+            var total = dataStream.FutureCount();
+            var totalA = dataStream.Where(t => t.RegionA).FutureCount();
+            var totalB = dataStream.Where(t => t.RegionB).FutureCount();
+            var totalC = dataStream.Where(t => t.RegionC).FutureCount();
+            var totalD = dataStream.Where(t => t.RegionD).FutureCount();
+
+            FutureConsole.FutureWriteLine(() => $"EventInfo: {namePostfix} {total.Value} {totalA.Value} {totalB.Value} {totalC.Value} {totalD.Value}");
 
             // Return only the first file - as there should be no more than that!
             return f
