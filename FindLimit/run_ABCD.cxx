@@ -237,14 +237,6 @@ void ReadResult(const char * fileName, const char * resultName = "", bool useCLs
 	StandardHypoTestInvDemo(enne, esse, fileName, resultName, "", "", "", 0, 0, useCLs);
 }
 
-
-#ifdef USE_AS_MAIN
-int main() {
-	StandardHypoTestInvDemo();
-}
-#endif
-
-
 /* Simultanous ABCD code  (S.giagu) */
 /*
  * n[4] = {n_A, n_B, n_C, n_D} <-- number of observed events in regions A, B, C, D
@@ -257,7 +249,10 @@ int main() {
  *
  */
 Double_t simultaneousABCD(Double_t n[4], Double_t s[4], Double_t b[4], Double_t c[4],
-	TString out_filename = "ABCD_ws.root", Bool_t useB = kFALSE, Bool_t useC = kFALSE, Bool_t blindA = kTRUE)
+	TString out_filename = "ABCD_ws.root",
+	Bool_t useB = kFALSE, // Use background as estimated in MC
+	Bool_t useC = kFALSE, // Use other background events (do subtraction of c above
+	Bool_t blindA = kTRUE) // Assume no signal, so we get expected limits
 {
 
 	// set RooFit random seed to a fix value for reproducible results
