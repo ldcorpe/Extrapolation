@@ -27,7 +27,6 @@
 
  */
 
-#include "GlobalConfig.h"
 #include "HypoTestInvTool.h"
 
 #include <TFile.h>
