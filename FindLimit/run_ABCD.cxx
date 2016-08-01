@@ -28,6 +28,7 @@
  */
 
 #include "HypoTestInvTool.h"
+#include "SimulABCD.h"
 
 #include <TFile.h>
 #include <TROOT.h>
@@ -249,10 +250,12 @@ void ReadResult(const char * fileName, const char * resultName = "", bool useCLs
  *
  */
 Double_t simultaneousABCD(Double_t n[4], Double_t s[4], Double_t b[4], Double_t c[4],
-	TString out_filename = "ABCD_ws.root",
-	Bool_t useB = kFALSE, // Use background as estimated in MC
-	Bool_t useC = kFALSE, // Use other background events (do subtraction of c above
-	Bool_t blindA = kTRUE) // Assume no signal, so we get expected limits
+	TString out_filename,
+	Bool_t useB, // Use background as estimated in MC
+	Bool_t useC, // Use other background events (do subtraction of c above
+	Bool_t blindA, // Assume no signal, so we get expected limits
+	Int_t calculationType// See comments below - 0 for toys, 2 for asym fit
+)
 {
 
 	// set RooFit random seed to a fix value for reproducible results
@@ -585,7 +588,7 @@ Double_t simultaneousABCD(Double_t n[4], Double_t s[4], Double_t b[4], Double_t 
 
 	// CLs test
 
-	Int_t type = 0;
+	// calculationType
 	// type = 0 Freq calculator   (for toys)
 	// type = 1 Hybrid calculator (don't use this)
 	// type = 2 Asymptotic calculator  (for asymptotic approximation)
@@ -605,7 +608,7 @@ Double_t simultaneousABCD(Double_t n[4], Double_t s[4], Double_t b[4], Double_t 
 	Int_t    par_npointscan = 100; // default: 100
 	Int_t    par_ntoys = 2500; // number of events in Asimov sample in case of type 2 or 3, number of events in each toys for type 0; defaul: 50000
 
-	Double_t score = StandardHypoTestInvDemo(0, "", out_filename, "wspace", "mc", "mc", "obsData", type, testStatType, true, par_npointscan, par_poi_min, par_poi_max, par_ntoys);
+	Double_t score = StandardHypoTestInvDemo(0, "", out_filename, "wspace", "mc", "mc", "obsData", calculationType, testStatType, true, par_npointscan, par_poi_min, par_poi_max, par_ntoys);
 
 	return score;
 }

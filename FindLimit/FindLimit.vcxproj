@@ -145,6 +145,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="HypoTestInvTool.cxx" />
+    <ClCompile Include="main.cxx" />
     <ClCompile Include="run_ABCD.cxx" />
   </ItemGroup>
   <ItemGroup>
@@ -152,10 +153,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HypoTestInvTool.h" />
+    <ClInclude Include="SimulABCD.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\ROOT.534.36.13\build\native\ROOT.targets" Condition="Exists('..\packages\ROOT.534.36.13\build\native\ROOT.targets')" />
+    <Import Project="..\packages\WildCommandLine.1.0.2.0\build\native\WildCommandLine.targets" Condition="Exists('..\packages\WildCommandLine.1.0.2.0\build\native\WildCommandLine.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -163,5 +166,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\ROOT.534.36.13\build\native\ROOT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ROOT.534.36.13\build\native\ROOT.props'))" />
     <Error Condition="!Exists('..\packages\ROOT.534.36.13\build\native\ROOT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ROOT.534.36.13\build\native\ROOT.targets'))" />
+    <Error Condition="!Exists('..\packages\WildCommandLine.1.0.2.0\build\native\WildCommandLine.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WildCommandLine.1.0.2.0\build\native\WildCommandLine.targets'))" />
   </Target>
 </Project>
