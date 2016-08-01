@@ -32,25 +32,25 @@ using namespace RooFit;
 
 HypoTestInvTool::HypoTestInvTool()
 	: mPlotHypoTestResult(true),
-mWriteResult(false),
-mOptimize(true),
-mUseVectorStore(true),
-mGenerateBinned(false),
-mUseProof(false),
-mRebuild(false),
-mReuseAltToys(false),
-mNWorkers(4),
-mNToyToRebuild(100),
-mPrintLevel(0),
-mInitialFit(-1),
-mRandomSeed(-1),
-mNToysRatio(2),
-mMaxPoi(-1),
-mAsimovBins(0),
-mMassValue(""),
-mMinimizerType(""),
-mNoSystematics(""),
-mResultFileName()
+	mWriteResult(false),
+	mOptimize(true),
+	mUseVectorStore(true),
+	mGenerateBinned(false),
+	mUseProof(false),
+	mRebuild(false),
+	mReuseAltToys(false),
+	mNWorkers(4),
+	mNToyToRebuild(100),
+	mPrintLevel(0),
+	mInitialFit(-1),
+	mRandomSeed(-1),
+	mNToysRatio(2),
+	mMaxPoi(-1),
+	mAsimovBins(0),
+	mMassValue(""),
+	mMinimizerType(""),
+	mNoSystematics(""),
+	mResultFileName()
 {
 }
 
@@ -192,7 +192,7 @@ HypoTestInvTool::AnalyzeResult(HypoTestInverterResult * r,
 		if (mResultFileName.IsNull()) {
 			mResultFileName = TString::Format("%s_%s_%s_ts%d_", calcType, limitType, scanType, testStatType);
 			//strip the / from the filename
-			if (mMassValue.size()>0) {
+			if (mMassValue.size() > 0) {
 				mResultFileName += mMassValue.c_str();
 				mResultFileName += "_";
 			}
@@ -249,7 +249,7 @@ HypoTestInvTool::AnalyzeResult(HypoTestInverterResult * r,
 			int nx = TMath::CeilNint(double(nEntries) / ny);
 			c2->Divide(nx, ny);
 		}
-		for (int i = 0; i<nEntries; i++) {
+		for (int i = 0; i < nEntries; i++) {
 			if (nEntries > 1) c2->cd(i + 1);
 			SamplingDistPlot * pl = plot->MakeTestStatPlot(i);
 			pl->SetLogYaxis(true);
