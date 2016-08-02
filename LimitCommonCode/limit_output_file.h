@@ -20,9 +20,9 @@ inline void write_limit_output_file(const std::string &fname, const std::vector<
 	auto h_2sigma = new TH1D("sigma_2", "sigma_2", results.size(), 0.0, results.size());
 
 	for (int i = 0; i < results.size(); i++) {
-		h_95->SetBinContent(i + 1, results[i].cl_95 * results[i].expected_signal.A);
-		h_1sigma->SetBinContent(i + 1, results[i].cl_1sigma * results[i].expected_signal.A);
-		h_2sigma->SetBinContent(i + 1, results[i].cl_2sigma * results[i].expected_signal.A);
+		h_95->SetBinContent(i + 1, results[i].cl_95 * results[i].signal.signalEvents.A / results[i].signal.efficiency[A]);
+		h_1sigma->SetBinContent(i + 1, results[i].cl_1sigma * results[i].signal.signalEvents.A / results[i].signal.efficiency[A]);
+		h_2sigma->SetBinContent(i + 1, results[i].cl_2sigma * results[i].signal.signalEvents.A / results[i].signal.efficiency[A]);
 	}
 
 	f->Write();

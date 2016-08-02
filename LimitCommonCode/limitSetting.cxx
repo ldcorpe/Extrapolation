@@ -26,7 +26,7 @@ void extrapolate_limit_to_lifetime_by_efficency(const extrap_file_wrapper &input
 	auto generated = input.generated_lifetime();
 
 	// Now, get the limit for it.
-	auto generated_limit = do_abcd_limit(dataObserved, generated.signalEvents, limit_params);
+	auto generated_limit = do_abcd_limit(dataObserved, generated, limit_params);
 
 	// For each lifetime in the input, rescale the limit till we have a limit number for all
 	// the outputs.
@@ -44,14 +44,20 @@ void extrapolate_limit_to_lifetime_by_efficency(const extrap_file_wrapper &input
 }
 
 // Given a limit that was generated at a particular lifetime, rescale for the new lifetime.
-// The beauty about doing this this way, is that signal strength, which is what the limit it, does not
-// change. Just the expected signal.
 limit_result rescale_limit_by_efficiency(const limit_result &original,
 	const signal_lifetime &original_efficiency,
 	const signal_lifetime &new_efficiency)
 {
+	// Update the number of events expected
 	auto result = original;
-	result.expected_signal = new_efficiency.signalEvents;
+	result.signal = new_efficiency;
+
+	// Next we have to update the signal strength. Mu represents the number of events
+	// from signal that are compatible with observed data and errors. So that number
+	// of events is what will remain constant. Rescale mu keeping that in mind.
+	result.cl_95 *= original.signal.signalEvents.A / result.signal.signalEvents.A;
+	result.cl_1sigma *= original.signal.signalEvents.A / result.signal.signalEvents.A;
+	result.cl_2sigma *= original.signal.signalEvents.A / result.signal.signalEvents.A;
 
 	return result;
 }

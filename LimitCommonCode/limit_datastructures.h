@@ -30,7 +30,7 @@ struct abcd_limit_config {
 // Result (and input parameters) from a limit.
 struct limit_result {
 	ABCD observed_data;
-	ABCD expected_signal;
+	signal_lifetime signal;
 	double cl_95;
 	double cl_1sigma;
 	double cl_2sigma;
@@ -44,5 +44,10 @@ inline std::ostream &operator<< (std::ostream &s, const ABCD &v)
 	return s;
 }
 
+inline std::ostream &operator<< (std::ostream &s, const signal_lifetime &v)
+{
+	s << "(ctau=" << v.lifetime << ", events=" << v.signalEvents << ")";
+	return s;
+}
 
 #endif

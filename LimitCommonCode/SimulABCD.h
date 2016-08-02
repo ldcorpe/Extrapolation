@@ -71,7 +71,7 @@ inline std::vector<double> ABCD_as_vector(const ABCD &events)
 	return n;
 }
 
-inline limit_result do_abcd_limit(const ABCD &data, const ABCD &expected_signal, const abcd_limit_config &config)
+inline limit_result do_abcd_limit(const ABCD &data, const signal_lifetime &expected_signal, const abcd_limit_config &config)
 {
 	std::vector<double> dummy(4);
 
@@ -81,7 +81,7 @@ inline limit_result do_abcd_limit(const ABCD &data, const ABCD &expected_signal,
 	r.cl_1sigma = 1.0;
 	r.cl_2sigma = 1.0;
 	r.cl_95 = 1.0;
-	r.expected_signal = expected_signal;
+	r.signal = expected_signal;
 	r.observed_data = data;
 	return r;
 }
