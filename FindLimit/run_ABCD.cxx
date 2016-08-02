@@ -249,7 +249,7 @@ void ReadResult(const char * fileName, const char * resultName = "", bool useCLs
  * blindA: kTRUE <-- keep signal region blind (i.e. test done assuming n_A = ABCD_exp_A),  kFALSE <-- use obs events in signal region
  *
  */
-Double_t simultaneousABCD(Double_t n[4], Double_t s[4], Double_t b[4], Double_t c[4],
+Double_t simultaneousABCD(const Double_t n[4], const Double_t s[4], const Double_t b[4], const Double_t c[4],
 	TString out_filename,
 	Bool_t useB, // Use background as estimated in MC
 	Bool_t useC, // Use other background events (do subtraction of c above

@@ -1,8 +1,32 @@
 ///
-/// Command line run of the limit setting
+/// Command line run of the limit setting. This is a tool mostly used for testing.
 ///
 
+// There is potential confusion on how A, B, C, and D are defined. This is because the code that drives
+// this comes from the Lepton-Jets analysis which uses a different setup. We use the CalRatio definition.
+//
+/*
+^ y(sumBDT)
+|
+|--------------------------+
+|    B         |     A     |
+|              |           |
+|              |           |
+|              |           |
+|              |           |
+|--------------+-----------|
+|    D         |     C     |
+|              |           |
+|              |  Signal   |
+|              |           |
++----------------------------->x(sumDRMax2GeV)
+
+ABCD Ansatz A:C = B:D -->  A = C * B/D
+^
+*/
+
 #include "SimulABCD.h"
+#include "CalRLJConverter.h"
 
 #include "TApplication.h"
 
@@ -46,7 +70,10 @@ int main(int argc, char **argv)
 
 		// And call it.
 		double dummy[4];
-		simultaneousABCD(data, signal, dummy, dummy,
+		simultaneousABCD(ConvertFromCalRToLJ(data),
+			ConvertFromCalRToLJ(signal),
+			ConvertFromCalRToLJ(dummy),
+			ConvertFromCalRToLJ(dummy),
 			"limit_result.root", false, false,
 			blinded,
 			config.useToys ? 0 : 2);
@@ -79,6 +106,7 @@ limit_config parse_command_line(int argc, char **argv)
 	// Make sure we got all the command line arguments we need
 	if (argc == 1 || !args.Parse(argc, argv)) {
 		cout << args.Usage("PlotSingleLimit") << endl;
+		cout << "  -> A, B, C, and D are defined as they are for the CalRatio analysis!" << endl;
 		throw runtime_error("Bad command line arguments - exiting");
 	}
 

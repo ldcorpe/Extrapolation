@@ -35,5 +35,8 @@
     <ClInclude Include="SimulABCD.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CalRLJConverter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
