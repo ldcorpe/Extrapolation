@@ -253,3 +253,4 @@ paket-files/
 *.root
 /start_Extrapolation.bat
 FindLimit/brasilianFlag.*
+ExtrapLimitFinder/brasilianFlag.*
