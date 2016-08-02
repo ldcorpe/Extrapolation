@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Linq;
 using static System.Math;
+using System.Collections.Generic;
 
 namespace GenerateMCFiles
 {
@@ -23,6 +24,10 @@ namespace GenerateMCFiles
         {
             // Get the sample file
             var file = Files.GetSampleAsMetaData(sample);
+
+            // The object that gives us access to the official event selection and ABCD method region
+            // boundaries.
+            var eventSelector = new SelectionHelperEventSelection();
 
             // Create the data we are going to write out. Every single event
             // has to be written out.
@@ -42,13 +47,13 @@ namespace GenerateMCFiles
                              let j2 = jets.Skip(1).FirstOrDefault()
                              let isSelected = jets.Count() != 2
                                 ? false
-                                : SelectionHelpers.eventSelection(j1.pT, j2.pT, j1.eta, j2.eta, j1.isGoodLLP, j2.isGoodLLP,
+                                : eventSelector.eventSelection(j1.pT, j2.pT, j1.eta, j2.eta, j1.isGoodLLP, j2.isGoodLLP,
                                     j1.phi, j2.phi, j1.CalibJet_time, j2.CalibJet_time, evt.Data.event_HTMiss, evt.Data.event_HT)
                              let minDR2Sum = jets.Where(j => j.pT > 50.0 && Abs(j.eta) < 2.5).Sum(j => j.CalibJet_minDRTrkpt2)
                              let passedTrigger = evt.Data.event_passCalRatio_TAU60
                              let region = (jets.Count() != 2)
                                 ? 0
-                                : SelectionHelpers.ABCDPlane(j1.pT, j2.pT, j1.CalibJet_BDT, j2.CalibJet_BDT, minDR2Sum)
+                                : eventSelector.ABCDPlane(j1.pT, j2.pT, j1.CalibJet_BDT, j2.CalibJet_BDT, minDR2Sum)
                              select new VpionData
                              {
                                  PassedCalRatio = passedTrigger,
@@ -146,15 +151,63 @@ namespace GenerateMCFiles
     }
 
     /// <summary>
-    /// There is C++ code that we share with everyone else. Use it here to make sure that
-    /// the official selection cuts are identical everywhere in the analyiss.
+    /// Generate CPP code for the selection function and the ABCD region finder.
     /// </summary>
-    [CPPHelperClass()]
-    class SelectionHelpers
+    /// <remarks>
+    /// A regular CPP code static object would be just as good, but if
+    /// we do this we can include the code directly as a comment, and then when it changes, force a re-run
+    /// since the hash of the function text will change.
+    /// </remarks>
+    class SelectionHelperEventSelection : IOnTheFlyCPPObject
     {
         /// <summary>
-        /// Determine if the event is in the analysis (or not). J1 and J2 ordering are by BDT ordering, not
-        /// by pT ordering as is standard in most analyses.
+        /// Location of the include file.
+        /// </summary>
+        readonly string _include_file = @"..\..\..\..\..\CalRSkimmer\CalRSelection.h";
+
+        /// <summary>
+        /// Return that file as an include file.
+        /// </summary>
+        /// <returns></returns>
+        public string[] IncludeFiles()
+        {
+            return new[] { _include_file };
+        }
+
+        /// <summary>
+        /// Return the lines of code. Include the file as a series of comments so they are hashed as part of the query.
+        /// </summary>
+        /// <param name="methodName"></param>
+        /// <returns></returns>
+        public IEnumerable<string> LinesOfCode(string methodName)
+        {
+            // First, generate the commented out code.
+            using (var reader = File.OpenText(_include_file))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    yield return "// " + line;
+                }
+            }
+
+            // Emit the specific code depending on which method is getting called.
+            if (methodName == "eventSelection")
+            {
+                yield return "eventSelection = event_selection(j1_pt, j2_pt, j1_eta, j2_eta, j1_isGoodLLP, j2_isGoodLLP, j1_phi, j2_phi, j1_time, j2_time, event_HTMiss, event_HT);";
+            }
+            else if (methodName == "ABCDPlane")
+            {
+                yield return "ABCDPlane = event_ABCD_plane(j1_pt, j2_pt, j1_bdt13lxy, j2_bdt13lxy, sumMinDRTrk2pt50);";
+            }
+            else
+            {
+                throw new InvalidOperationException($"Unknown method {methodName} referenced - don't know how to code it!");
+            }
+        }
+
+        /// <summary>
+        /// The official base event selection.
         /// </summary>
         /// <param name="j1_pt"></param>
         /// <param name="j2_pt"></param>
@@ -169,11 +222,7 @@ namespace GenerateMCFiles
         /// <param name="event_HTMiss"></param>
         /// <param name="event_HT"></param>
         /// <returns></returns>
-        [CPPCode(IncludeFiles = new[] { @"C:\Users\gordo\Documents\Code\calratio2015\CalRSkimmer\CalRSelection.h" }, Code = new[]
-        {
-            "eventSelection = event_selection(j1_pt, j2_pt, j1_eta, j2_eta, j1_isGoodLLP, j2_isGoodLLP, j1_phi, j2_phi, j1_time, j2_time, event_HTMiss, event_HT);"
-        })]
-        public static bool eventSelection(
+        public bool eventSelection(
             double j1_pt, double j2_pt,
             double j1_eta, double j2_eta,
             bool j1_isGoodLLP, bool j2_isGoodLLP,
@@ -184,11 +233,16 @@ namespace GenerateMCFiles
             throw new InvalidOperationException("Should never get called by C# code!");
         }
 
-        [CPPCode(IncludeFiles = new[] { @"C:\Users\gordo\Documents\Code\calratio2015\CalRSkimmer\CalRSelection.h" }, Code = new[]
-        {
-            "ABCDPlane = event_ABCD_plane(j1_pt, j2_pt, j1_bdt13lxy, j2_bdt13lxy, sumMinDRTrk2pt50);"
-        })]
-        public static int ABCDPlane(
+        /// <summary>
+        /// Which region of the ABCD plane is the event in?
+        /// </summary>
+        /// <param name="j1_pt"></param>
+        /// <param name="j2_pt"></param>
+        /// <param name="j1_bdt13lxy"></param>
+        /// <param name="j2_bdt13lxy"></param>
+        /// <param name="sumMinDRTrk2pt50"></param>
+        /// <returns></returns>
+        public int ABCDPlane(
             double j1_pt, double j2_pt,
             double j1_bdt13lxy, double j2_bdt13lxy,
             double sumMinDRTrk2pt50)
