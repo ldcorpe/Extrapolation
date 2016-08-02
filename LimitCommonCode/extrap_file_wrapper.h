@@ -72,6 +72,7 @@ public:
 		result.signalEvents.C *= result.efficiency[C] / original.efficiency[C];
 		result.signalEvents.D *= result.efficiency[D] / original.efficiency[D];
 
+		return result;
 	}
 
 private:
@@ -86,7 +87,7 @@ private:
 	{
 		auto h = static_cast<TH1D*>(_file->Get(name.c_str()));
 		if (h == nullptr) {
-			throw std::runtime_error(string("Unable to load histogram ") + name + " from extrapolation file");
+			throw std::runtime_error(std::string("Unable to load histogram ") + name + " from extrapolation file");
 		}
 		return h;
 	}
@@ -95,7 +96,7 @@ private:
 	std::vector<double> load_histo_as_vector(const std::string &name) const
 	{
 		auto h = load_histo(name);
-		vector<double> result;
+		std::vector<double> result;
 		for (int i = 1; i <= h->GetNbinsX(); i++) {
 			result.push_back(h->GetBinContent(i));
 		}

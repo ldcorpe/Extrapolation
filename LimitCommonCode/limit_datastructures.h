@@ -3,6 +3,7 @@
 #define __limit_datastructures__
 
 #include <vector>
+#include <ostream>
 
 // Number of events, signal, etc., in the ABCD regions.
 struct ABCD {
@@ -34,5 +35,14 @@ struct limit_result {
 	double cl_1sigma;
 	double cl_2sigma;
 };
+
+// Some output operators to make debugging/dumping a little easier.
+
+inline std::ostream &operator<< (std::ostream &s, const ABCD &v)
+{
+	s << "(" << v.A << ", " << v.B << ", " << v.C << ", " << v.D << ")";
+	return s;
+}
+
 
 #endif

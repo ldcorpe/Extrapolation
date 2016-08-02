@@ -5,6 +5,8 @@
 
 #include "TROOT.h"
 
+#include <iostream>
+
 /*
 Two variables x,y create 4 regions: A,B,C,D with A signal dominated region and
 B,C,D control regions (sidebands).
@@ -59,6 +61,24 @@ inline Double_t simultaneousABCD(const std::vector<double> &n,
 		out_filename, useB, useC, blindA, calcType);
 }
 
-inline limit_result do_abcd_limit(const ABCD &data, const ABCD &expected_signal, const abcd_limit_config &config);
+inline std::vector<double> ABCD_as_vector(const ABCD &events)
+{
+	std::vector<double> n;
+	n.push_back(events.A);
+	n.push_back(events.B);
+	n.push_back(events.C);
+	n.push_back(events.D);
+	return n;
+}
+
+inline limit_result do_abcd_limit(const ABCD &data, const ABCD &expected_signal, const abcd_limit_config &config)
+{
+	std::vector<double> dummy(4);
+
+	std::cout << "Limit. data: " << data << "  expected signal: " << expected_signal << std::endl;
+
+	limit_result r;
+	return r;
+}
 #endif
 
