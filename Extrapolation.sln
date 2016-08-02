@@ -13,7 +13,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FindLimit", "FindLimit\Find
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LimitCode", "LimitCode", "{79A02913-C5E4-4151-AB23-E5FE08BF0742}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LimitCommonCode", "LimitCommonCode\LimitCommonCode.vcxitems", "{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		LimitCommonCode\LimitCommonCode.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
+		LimitCommonCode\LimitCommonCode.vcxitems*{e43b2049-e303-4dd9-a2b1-d17ba946f429}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
@@ -53,5 +59,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E43B2049-E303-4DD9-A2B1-D17BA946F429} = {79A02913-C5E4-4151-AB23-E5FE08BF0742}
+		{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7} = {79A02913-C5E4-4151-AB23-E5FE08BF0742}
 	EndGlobalSection
 EndGlobal
