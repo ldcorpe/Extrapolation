@@ -57,6 +57,10 @@ vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const ve
 std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError &den);
 void SetAsymError(unique_ptr<TGraphAsymmErrors> &g, int bin, double tau, double bvalue, const pair<double, double> &assErrors);
 
+unique_ptr<TH1D> save_as_histo(const string &name, double number);
+unique_ptr<TH1D> save_as_histo(const string &name, const vector<double> &number);
+unique_ptr<TH1D> save_as_histo(const string &name, const vector<doubleError> &number);
+
 ////////////////////////////////
 // Main entry point.
 ////////////////////////////////
@@ -139,6 +143,18 @@ int main(int argc, char**argv)
 		for (int i_region = 0; i_region < 4; i_region++) {
 			output_file->Add(h_res_eff[i_region]);
 		}
+
+		// Save basic information for the generated sample.
+		output_file->Add(save_as_histo("generated_ctau", config._tau_gen).release());
+		output_file->Add(save_as_histo("n_passed_as_generated", passedEventsAtGen).release());
+		output_file->Add(save_as_histo("n_as_generated", totalEventsAtGen).release());
+
+		vector<doubleError> effAtGen;
+		for (int i = 0; i < 4; i++) {
+			effAtGen.push_back(passedEventsAtGen[i] / totalEventsAtGen[i]);
+		}
+		output_file->Add(save_as_histo("eff_as_generated", effAtGen).release());
+
 		output_file->Write();
 	}
 	catch (exception &e)
@@ -229,13 +245,6 @@ void doSR(TLorentzVector vpi1, TLorentzVector vpi2, Double_t tau, Double_t &beta
 	return;
 }
 
-class bogus
-{
-public:
-	bogus() {}
-
-};
-
 // Generate a lxy1 and lxy2 set of histograms. The denominator (first item) is
 // the generated ones. The numerator is modified by the acceptance histogram
 // built from the input file.
@@ -248,7 +257,6 @@ pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, in
 	nname << "tau_" << tau << "_num";
 	auto beta_binning(PopulateBetaBinning());
 	unique_ptr<TH2F> den(make_unique<TH2F>(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
-	vector<unique_ptr<bogus>> dork;
 	vector<unique_ptr<TH2F>> num;
 	for (int i_region = 0; i_region < 4; i_region++) {
 		nname << "A";
@@ -317,6 +325,8 @@ vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const ve
 			// Count the event and populate the output histogram, if
 			// We are doing an event count only (e.g. the denominator) or
 			// it passes our analysis cuts (e.g. the numerator).
+			// TODO: when eventCountOnly is true, every single event goes into each region, no matter what.
+			//       make sure that is what we want.
 			auto inRegion =
 				i_region == 0 ? entry.RegionA
 				: i_region == 1 ? entry.RegionB
@@ -364,357 +374,34 @@ void SetAsymError(unique_ptr<TGraphAsymmErrors> &g, int bin, double tau, double 
 	g->SetPointEYhigh(bin, assErrors.second);
 }
 
-#ifdef notyet
-TH1F *h_res_eff, *h_res_ev;
-
-TH2F *h_Npass_gen = 0;
-TH2F *h_Ngen_num = 0;
-TH2F *h_Ngen_den = 0;
-
-TGraphAsymmErrors *g_res_eff;
-TGraphAsymmErrors *g_res_ev;
-TGraphAsymmErrors *g_res_landau;
-void setParams(std::string mp, Double_t &mass, Double_t &xsec, Double_t &effi_real, int &k_gen, Double_t &tau_gen, Double_t &scale_factor);
-void doSR(TLorentzVector vpi1, TLorentzVector vpi2, Double_t tau, Double_t &beta1, Double_t &beta2, Double_t &L2D1, Double_t &L2D2);
-
-TH2F *ef12;
-
-ofstream logfile;
-
-
-// Hold onto variable binning for beta.
-variable_binning_builder beta_binning(0.0);
-
-std::pair<Double_t, Double_t> getBayes(Double_t num, Double_t den) {
-	// returns the Bayesian uncertainty over the num/den ratio
-	std::pair<Double_t, Double_t> result(0., 0.);
-
-	TH1D *h_num = new TH1D("h_num", "", 1, 0, 1);
-	TH1D *h_den = new TH1D("h_den", "", 1, 0, 1);
-
-	h_num->SetBinContent(1, num);
-	h_den->SetBinContent(1, den);
-
-	TGraphAsymmErrors *h_eff = new TGraphAsymmErrors();
-	h_eff->BayesDivide(h_num, h_den);//, "w"); 
-
-	result.first = h_eff->GetErrorYlow(0);
-	result.second = h_eff->GetErrorYhigh(0);
-
-	delete h_num;
-	delete h_den;
-	delete h_eff;
-
-	return result;
-}
-
-void extrapolate_betaw(string mp, string file = "testing", Double_t timecutshift = 0.0, Double_t ETcutshift = 0.0, int ncount = -1.0, bool triggerOnly = false, bool use_lxyeff = false, string inputFileSuffix = "_Rachel_3D")
+// Helper func to save a number into a histogram.
+unique_ptr<TH1D> save_as_histo(const string &name, double number)
 {
-	lxyUseEffWeight = use_lxyeff;
-	int ntauloops = 5;
-	bool onlyGenTau = false;
-	TString outputroot = mp + "/" + mp + "_" + file + ".root";
-	std::string output = mp + "/" + mp + "_" + file + ".txt";
-	std::string instr = "input/" + mp + inputFileSuffix + ".root";
-	std::string sfhist;
-
-	logfile.open(output.c_str(), ofstream::out | ofstream::trunc);
-
-	logfile << "***Processing: "
-		<< "  -> Mass = " << mp << endl
-		<< "  -> Input file " << instr << endl
-		<< "  -> Time cut shift = " << timecutshift << endl
-		<< "  -> ET cut shift = " << ETcutshift << endl
-		<< "  -> Tau Loops: " << ntauloops << endl
-		<< "  -> # Events in file to use (-1 is all): " << ncount << endl 
-		<< "  -> Using lxy efficiency: " << lxyUseEffWeight << endl
-		<< endl;
-
-	// We want uneven binning for beta.
-
-	beta_binning.add_bins(4, 0.2);
-	beta_binning.add_bins(4, 0.05);
-	h_Npass_gen = new TH2F("h_Npass_gen", "h_Npass_gen", beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list());
-
-	// Proper lifetimes used in this simulation (in meters)
-	Int_t nbin(0);
-	Double_t *xbin = PopulateTauTable(nbin);
-
-	// Load the file and attach to testtree.
-	LoadAndAttachFile(instr, ncount);
-
-	// Get everything configured from our inputs.
-
-	Double_t lumi = 20300.; //Integrated luminosity in pb-1 for N events VS lifetime  
-	Double_t mass = -1, xsec = -1, effi_real = -1, tau_gen = -1, scale_factor = -1;
-	int k_gen = -1;
-	setParams(mp, mass, xsec, effi_real, k_gen, tau_gen, scale_factor);  // Set parameters for mass point mp
-	Double_t Lxy_min = 0, Lxy_max = 10000 / 1000.;
-
-	// Dump info about the sample so we have a log of what we are doing.
-
-	logfile << "***Generated Sample: "
-		<< "  -> Tau = " << tau_gen << endl
-		<< "  -> Efficiency =  " << effi_real << endl
-		<< "  -> Cross-section = " << xsec << endl
-		<< "  -> # of events = " << nentries << endl << endl;
-
-	// ************************************************************************************** //
-	// First, we want the number of events passing all cuts as a function of beta1 and beta2.
-	// ************************************************************************************** //
-
-	// Get the number of events that have passed, and keep track with a histo...
-	doubleError passedEventsAtGen = CalcPassedEvents(nullptr, false, h_Npass_gen, triggerOnly);
-
-	// Get the total number of events
-	doubleError totalEventsAtGen = CalcPassedEvents(nullptr, true, nullptr, triggerOnly);
-
-	logfile << "Finished initial scan of MC: " << endl
-		<< "  -> Total number of events passing: " << passedEventsAtGen << endl
-		<< "  -> Total number of generated events: " << totalEventsAtGen << endl
-		<< "  -> Global eff fraction at generated ctau: " << passedEventsAtGen / totalEventsAtGen << endl;
-
-	// **************************************************************************************************** //
-	// Second, we want how often, for the generated sample, a pair of beta1, beta2 vpions reaches the HCal.
-	// **************************************************************************************************** //
-
-	pair<TH2F*, TH2F*> r = GetFullBetaShape(tau_gen, ntauloops, "h_Ngen");
-	TH2F *h_gen_ratio = DivideShape(r, "h_Ngen_ratio", "Fraction of events in beta space at raw generated ctau");
-	h_Ngen_num = r.first;
-	h_Ngen_den = r.second;
-
-	// **************************************************************************************** //
-	// Third, we want how often, for some ctau, a pair of beta1, beta2 vpions reaches the HCal.
-	// **************************************************************************************** //
-
-	vector<TH2F*> toSave;
-	h_res_eff = new TH1F("h_res_eff", "h_res_eff", nbin, xbin); //Efficiency VS lifetime
-	h_res_ev = new TH1F("h_res_ev", "h_res_ev", nbin, xbin);   //Number of events VS lifetime
-
-	g_res_eff = new TGraphAsymmErrors(nbin);
-	g_res_eff->SetName("g_res_eff");
-	g_res_eff->SetTitle("Absolute efficiency to the generated analysis");
-
-	g_res_ev = new TGraphAsymmErrors(nbin); //Number of events VS lifetime
-	g_res_ev->SetName("g_res_ev");
-	g_res_ev->SetTitle("Number of events as a function of lifetime");
-
-	TH1F *h_relative_eff = new TH1F("h_relative_eff", "Relative Efficience compared to generated ctau", nbin, xbin);
-
-	for (int k = 0; k < h_res_eff->GetNbinsX(); k++) {
-
-		Double_t tau = h_res_eff->GetBinCenter(k + 1);
-
-		TH2F *h_Nctau_num = 0;
-		TH2F *h_Nctau_den = 0;
-		TH2F *h_Nratio = 0;
-
-		// Get the beta shape for these guys that pass at this proper lifetime.
-
-		ostringstream name;
-		name << "h_Ncatu_" << tau;
-		pair<TH2F*, TH2F*> r = GetFullBetaShape(tau, ntauloops, name.str());
-		h_Nctau_num = r.first;
-		h_Nctau_den = r.second;
-
-		ostringstream rname;
-		rname << "h_ratio_ctau_" << tau;
-
-		TH2F *h_caut_ratio = DivideShape(r, rname.str(), rname.str());
-
-		// Now, create a weighting histogram. This is just the differece between the numerators at the
-		// extrapolated ctau and at the generated ctau
-
-		h_Nratio = (TH2F*)h_caut_ratio->Clone();
-		h_Nratio->Divide(h_gen_ratio);
-		ostringstream rrname;
-		rrname << "h_Nratio_" << tau;
-		h_Nratio->SetName(rrname.str().c_str());
-		h_Nratio->SetTitle(rrname.str().c_str());
-
-		// Next, re-calc the efficiency
-
-		doubleError passedEventsAtTau = CalcPassedEvents(h_Nratio, false, nullptr, triggerOnly);
-		doubleError relativeEff = passedEventsAtTau / passedEventsAtGen;
-		doubleError eff = passedEventsAtTau / totalEventsAtGen;
-
-		std::pair<Double_t, Double_t> bayerr_sig_perc = getBayes(passedEventsAtTau, totalEventsAtGen);
-		Double_t erro = (bayerr_sig_perc.first + bayerr_sig_perc.second)*0.5;
-
-		h_res_eff->SetBinContent(k + 1, eff.value());
-		h_res_eff->SetBinError(k + 1, erro);
-		SetAsymError(g_res_eff, k, tau, eff.value(), bayerr_sig_perc);
-
-		h_res_ev->SetBinContent(k + 1, (eff * xsec * lumi).value());
-		h_res_ev->SetBinError(k + 1, erro * xsec * lumi);
-		pair<double, double> bayerr_nev = make_pair(bayerr_sig_perc.first * xsec * lumi, bayerr_sig_perc.second * xsec * lumi);
-		SetAsymError(g_res_ev, k, tau, (eff * xsec * lumi).value(), bayerr_nev);
-
-		h_relative_eff->SetBinContent(k + 1, relativeEff.value());
-		h_relative_eff->SetBinError(k + 1, relativeEff.err());
-
-		logfile << "k = " << k << " tau = " << tau << " npassed = " << passedEventsAtTau << " passed tau/gen = " << passedEventsAtTau / passedEventsAtGen << " global eff = " << eff << endl;
-
-		if (k % 50 == 0) {
-			toSave.push_back(h_Nctau_den);
-			toSave.push_back(h_Nctau_num);
-			toSave.push_back(h_Nratio);
-			toSave.push_back(h_caut_ratio);
-		}
-		else {
-			delete h_Nctau_num;
-			delete h_Nctau_den;
-			delete h_Nratio;
-		}
-	} // k loop
-
-	g_res_landau = new TGraphAsymmErrors(nbin); //Number of events VS lifetime: landau fit
-	g_res_landau->SetName("g_res_landau");
-
-	TFile *outf = TFile::Open(outputroot, "RECREATE");
-
-	g_res_eff->Write();
-
-	h_res_eff->Write();
-	h_res_ev->Write();
-	g_res_ev->Write();
-
-	h_Npass_gen->Write();
-	h_Ngen_num->Write();
-	h_Ngen_den->Write();
-	h_gen_ratio->Write();
-	h_relative_eff->Write();
-
-	for (size_t i = 0; i < toSave.size(); i++) {
-		toSave[i]->Write();
-	}
-
-	outf->Close();
-	logfile.close();
+	auto h = make_unique<TH1D>(name.c_str(), name.c_str(), 1, 0.0, 1.0);
+	h->SetDirectory(nullptr);
+	h->SetBinContent(1, number);
+	return move(h);
 }
 
-//
-// Parse the command line arguments
-//
-extrapolate_config parse_command_line(int argc, char ** argv)
+// Save a vector into a histogram.
+unique_ptr<TH1D> save_as_histo(const string &name, const vector<double> &number)
 {
-	if (argc != 2) {
-		throw exception("Incorrect number of arguments.");
+	auto h = make_unique<TH1D>(name.c_str(), name.c_str(), number.size(), 0.0, 1.0);
+	h->SetDirectory(nullptr);
+	for (int i = 0; i < number.size(); i++) {
+		h->SetBinContent(i + 1, number[i]);
 	}
-	auto r = extrapolate_config();
-	r._muon_tree_root_file = argv[1];
-	return r;
+	return move(h);
 }
 
-void setParams(std::string mp, Double_t &mass, Double_t &xsec, Double_t &effi_real, int &k_gen, Double_t &tau_gen, Double_t &scale_factor) {
-
-	if (mp.compare("100_10") == 0) {
-		mass = 10.0;  //Mass in GeV of the vpion (159220)  
-		xsec = 29.68;  //X-section in pb for N events VS lifetime 159220 (100_10)
-		effi_real = 0.001134;  //At generated lifetime 450
-		k_gen = 87;
-		tau_gen = 0.45;
-		scale_factor = 1; //1.00013;
+// Save a vector into a histogram.
+unique_ptr<TH1D> save_as_histo(const string &name, const vector<doubleError> &number)
+{
+	auto h = make_unique<TH1D>(name.c_str(), name.c_str(), number.size(), 0.0, 1.0);
+	h->SetDirectory(nullptr);
+	for (int i = 0; i < number.size(); i++) {
+		h->SetBinContent(i + 1, number[i].value());
+		h->SetBinError(i + 1, number[i].err());
 	}
-	else if (mp.compare("100_25") == 0) {
-		mass = 25.0;  //Mass in GeV of the vpion (159221)  
-		xsec = 29.68;  //X-section in pb for N events VS lifetime 159221 (100_25)
-		effi_real = 0.000630;  //At generated lifetime 1250
-		k_gen = 132;
-		tau_gen = 1.25;
-		scale_factor = 1; //1.02033;
-	}
-	else if (mp.compare("126_10") == 0) {
-		mass = 10.0;  //Mass in GeV of the vpion (159222)  
-		xsec = 18.97;  //X-section in pb for N events VS lifetime 159222 (126_10)
-		effi_real = 0.002655;  //At generated lifetime 350
-		k_gen = 68;
-		tau_gen = 0.35;
-		scale_factor = 1; //1.00000;
-	}
-	else if (mp.compare("126_25") == 0) {
-		mass = 25.0;  //Mass in GeV of the vpion (159223)  
-		xsec = 18.97;  //X-section in pb for N events VS lifetime 159223 (126_25)
-		effi_real = 0.002145;  //At generated lifetime 900
-		k_gen = 124;
-		tau_gen = 0.9;
-		scale_factor = 1; //1.00298;
-	}
-	else if (mp.compare("126_40") == 0) {
-		mass = 40.0;  //Mass in GeV of the vpion (159224)  
-		xsec = 18.97;  //X-section in pb for N events VS lifetime 159224 (126_40)
-		effi_real = 0.001116;  //At generated lifetime 1850
-		k_gen = 148;
-		tau_gen = 1.85;
-		scale_factor = 1; //1.11395;  //!! LARGE!
-	}
-	else if (mp.compare("140_10") == 0) {
-		mass = 10.0;  //Mass in GeV of the vpion (159225)  
-		xsec = 15.42;  //X-section in pb for N events VS lifetime 159225 (140_10)
-		effi_real = 0.003243;  //At generated lifetime 275
-		k_gen = 54;
-		tau_gen = 0.275;
-		scale_factor = 1; //1.00000;
-	}
-	else if (mp.compare("140_20") == 0) {
-		mass = 20.0;  //Mass in GeV of the vpion (158346)  
-		xsec = 15.42;  //X-section in pb for N events VS lifetime 158346 (140_20)
-		effi_real = 0.003077;  //At generated lifetime 630
-		k_gen = 117;
-		tau_gen = 0.63;
-		scale_factor = 1; //1.00016;
-	}
-	else if (mp.compare("140_40") == 0) {
-		mass = 40.0;  //Mass in GeV of the vpion (159226)  
-		xsec = 15.42;  //X-section in pb for N events VS lifetime 159226 (140_40)
-		effi_real = 0.002060;  //At generated lifetime 1500
-		k_gen = 139;
-		tau_gen = 1.5;
-		scale_factor = 1; //1.04871;
-	}
-	else if (mp.compare("300_50") == 0) {
-		mass = 50.0;  //Mass in GeV of the vpion (300_50)  
-		xsec = 3.594;  //X-section in pb for N events VS lifetime (300_50)
-		effi_real = 0.0060467;  //At generated lifetime 800
-		k_gen = 121;
-		tau_gen = 0.8;
-		scale_factor = 1; //1.00095;
-	}
-	else if (mp.compare("600_50") == 0) {
-		mass = 50.0;  //Mass in GeV of the vpion (600_50)  
-		xsec = 0.523;  //X-section in pb for N events VS lifetime 159226 (600_50)
-		effi_real = 0.005001;  //At generated lifetime 500
-		k_gen = 96;
-		tau_gen = 0.5;
-		scale_factor = 1; //1.00000;
-	}
-	else if (mp.compare("600_150") == 0) {
-		mass = 150.0;  //Mass in GeV of the vpion (600_150)  
-		xsec = 0.523;  //X-section in pb for N events VS lifetime (600_150)
-		effi_real = 0.004066;  //At generated lifetime 1700
-		k_gen = 144;
-		tau_gen = 1.7;
-		scale_factor = 1; //1.07390;
-	}
-	else if (mp.compare("900_50") == 0) {
-		mass = 50.0;  //Mass in GeV of the vpion (600_50)  
-		xsec = 0.0571;  //X-section in pb for N events VS lifetime 159226 (600_50)
-		effi_real = 0.004746;  //At generated lifetime 500
-		k_gen = 96;
-		tau_gen = 0.5;
-		scale_factor = 1; //1.00000;
-	}
-	else if (mp.compare("900_150") == 0) {
-		mass = 150.0;  //Mass in GeV of the vpion (900_150)  
-		xsec = 0.0571;  //X-section in pb for N events VS lifetime (900_150)
-		effi_real = 0.003711;   //At generated lifetime 1300
-		k_gen = 134;
-		tau_gen = 1.3;
-		scale_factor = 1; //1.03640;
-	}
-	else {
-		std::cout << mp << " is not a valid mass point." << std::endl;
-	}
-	return;
+	return move(h);
 }
-#endif
