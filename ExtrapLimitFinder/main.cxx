@@ -41,7 +41,12 @@ int main(int argc, char **argv)
 		extrap_file_wrapper input_file(c.extrapolate_filename);
 
 		// If we are going to do it by setting the limit once and calculating the efficiency.
-		extrapolate_limit_to_lifetime_by_efficency(input_file, c.observed_data, c.limit_settings);
+		if (c.limit_settings.scaleLimitByEfficiency) {
+			extrapolate_limit_to_lifetime_by_efficency (input_file, c.observed_data, c.limit_settings);
+		}
+		else {
+			extrapolate_limit_to_lifetime              (input_file, c.observed_data, c.limit_settings);
+		}
 	}
 	catch (exception &e) {
 		cout << "Total failure - exception thrown: " << e.what() << endl;
@@ -65,7 +70,8 @@ config parse_command_line(int argc, char **argv)
 		Arg("nD", "D", "How many events observed in data in region D", Arg::Is::Required),
 
 		// Options
-		Flag("UseAsym", "a", "Do asymtotic fit rather than using toys (toys are slow!)", Arg::Is::Optional)
+		Flag("UseAsym", "a", "Do asymtotic fit rather than using toys (toys are slow!)", Arg::Is::Optional),
+		Flag("ExtrapAtEachLifetime", "l", "Refit limit at each lifetime point to take into account differing efficiencies at A, B, C and D", Arg::Is::Optional),
 	});
 
 	// Make sure we got all the command line arguments we need
@@ -84,6 +90,7 @@ config parse_command_line(int argc, char **argv)
 	result.observed_data.D = args.GetAsFloat("nD");
 
 	result.limit_settings.useToys = !args.IsSet("UseAsym");
+	result.limit_settings.scaleLimitByEfficiency = !args.IsSet("ExtrapAtEachLifetime");
 
 	return result;
 }

@@ -43,6 +43,31 @@ void extrapolate_limit_to_lifetime_by_efficency(const extrap_file_wrapper &input
 	write_limit_output_file("limits.root", results);
 }
 
+// Extrapolate vs lifetime by:
+//  1. Calculate the limit at each lifetime
+//  2. Use the efficiency evolution as a function of lifetime to
+//     determine the limit at other points.
+void extrapolate_limit_to_lifetime(const extrap_file_wrapper &input,
+	const ABCD &dataObserved,
+	const abcd_limit_config &limit_params)
+{
+	// For each lifetime in the input, rescale the limit till we have a limit number for all
+	// the outputs.
+	auto lifetimes = input.list_of_lifetimes();
+	vector<limit_result> results;
+	transform(lifetimes.begin(), lifetimes.end(), back_inserter(results),
+		[&input, &dataObserved, &limit_params](double ctau)
+	{
+		// Get the signal info and do the lmit.
+		auto signal = input.lifetime(ctau);
+		return do_abcd_limit(dataObserved, signal, limit_params);
+	}
+	);
+
+	// Great. Next, we have to build the output file and write this!
+	write_limit_output_file("limits.root", results);
+}
+
 // Given a limit that was generated at a particular lifetime, rescale for the new lifetime.
 limit_result rescale_limit_by_efficiency(const limit_result &original,
 	const signal_lifetime &original_efficiency,
