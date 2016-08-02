@@ -72,7 +72,7 @@ std::string  minimizerType = "";                  // minimizer type (default is 
 int   printLevel = 0;                    // print level for debugging PL test statistics and calculators  
 
 
-Double_t
+HypoTestInvTool::LimitResults
 StandardHypoTestInvDemo(int enne, TString esse, const char * infile = 0,
 	const char * wsName = "combined",
 	const char * modelSBName = "ModelConfig",
@@ -149,7 +149,7 @@ StandardHypoTestInvDemo(int enne, TString esse, const char * infile = 0,
 	// if input file was specified but not found, quit
 	if (!file && !TString(infile).IsNull()) {
 		cout << "file " << fileName << " not found" << endl;
-		return -999;
+		throw runtime_error("File not found in run limit");
 	}
 
 	// if default file not found, try to create it
@@ -170,7 +170,7 @@ StandardHypoTestInvDemo(int enne, TString esse, const char * infile = 0,
 	if (!file) {
 		// if it is still not there, then we can't continue
 		cout << "Not able to run hist2workspace to create example input" << endl;
-		return -999;
+		throw runtime_error("Couldn't get the file open for some weird reason.");
 	}
 
 	HypoTestInvTool calc;
@@ -208,7 +208,7 @@ StandardHypoTestInvDemo(int enne, TString esse, const char * infile = 0,
 			ntoys, useNumberCounting, nuisPriorName);
 		if (!r) {
 			std::cerr << "Error running the HypoTestInverter - Exit " << std::endl;
-			return -999;
+			throw runtime_error("Error running the HypnoTestInverter");
 		}
 	}
 	else {
@@ -219,11 +219,11 @@ StandardHypoTestInvDemo(int enne, TString esse, const char * infile = 0,
 			std::cerr << "File " << fileName << " does not contain a workspace or an HypoTestInverterResult - Exit "
 				<< std::endl;
 			file->ls();
-			return -999;
+			throw runtime_error("File doesn't contain a workspace.");
 		}
 	}
 
-	Double_t expLimitSG = calc.AnalyzeResult(r, calculatorType, testStatType, useCLs, npoints, infile);
+	auto expLimitSG = calc.AnalyzeResult(r, calculatorType, testStatType, useCLs, npoints, infile);
 
 	return expLimitSG;
 }
@@ -249,7 +249,7 @@ void ReadResult(const char * fileName, const char * resultName = "", bool useCLs
  * blindA: kTRUE <-- keep signal region blind (i.e. test done assuming n_A = ABCD_exp_A),  kFALSE <-- use obs events in signal region
  *
  */
-Double_t simultaneousABCD(const Double_t n[4], const Double_t s[4], const Double_t b[4], const Double_t c[4],
+HypoTestInvTool::LimitResults simultaneousABCD(const Double_t n[4], const Double_t s[4], const Double_t b[4], const Double_t c[4],
 	TString out_filename,
 	Bool_t useB, // Use background as estimated in MC
 	Bool_t useC, // Use other background events (do subtraction of c above
@@ -269,7 +269,7 @@ Double_t simultaneousABCD(const Double_t n[4], const Double_t s[4], const Double
 	Double_t ns_A = s[0];
 	if (ns_A <= 0) {
 		std::cout << "ERROR: 0 signal events in signal region (A)!!! --> Check inputs!  s[0] = " << ns_A << std::endl;
-		return -1.0;
+		throw runtime_error("No signal events found in signal region!");
 	}
 	Double_t ns_B = s[1] / ns_A;
 	Double_t ns_C = s[2] / ns_A;
@@ -608,7 +608,7 @@ Double_t simultaneousABCD(const Double_t n[4], const Double_t s[4], const Double
 	Int_t    par_npointscan = 100; // default: 100
 	Int_t    par_ntoys = 2500; // number of events in Asimov sample in case of type 2 or 3, number of events in each toys for type 0; defaul: 50000
 
-	Double_t score = StandardHypoTestInvDemo(0, "", out_filename, "wspace", "mc", "mc", "obsData", calculationType, testStatType, true, par_npointscan, par_poi_min, par_poi_max, par_ntoys);
+	auto score = StandardHypoTestInvDemo(0, "", out_filename, "wspace", "mc", "mc", "obsData", calculationType, testStatType, true, par_npointscan, par_poi_min, par_poi_max, par_ntoys);
 
 	return score;
 }
@@ -638,7 +638,7 @@ void run_ABCD(Bool_t blind = kTRUE) {
 	Double_t xb[4] = { 0.,0.,0.,0. }; // MC BG not used in this example
 	Double_t xc[4] = { 0.,0.,0.,0. }; // other data-driven BG not used in this example
 
-	Double_t z = simultaneousABCD(xn, xs, xb, xc, "ABCD_ws_test.root", kFALSE, kFALSE, blind);
+	auto z = simultaneousABCD(xn, xs, xb, xc, "ABCD_ws_test.root", kFALSE, kFALSE, blind);
 
 	std::cout << "Input: obs  A/B/C/D: " << xn[0] << " / " << xn[1] << " / " << xn[2] << " / " << xn[3] << endl;
 	std::cout << "Input: sig  A/B/C/D: " << xs[0] << " / " << xs[1] << " / " << xs[2] << " / " << xs[3] << endl;

@@ -2,6 +2,7 @@
 #define __SimulABCD__
 
 #include "limit_datastructures.h"
+#include "HypoTestInvTool.h"
 
 #include "TROOT.h"
 
@@ -31,7 +32,7 @@ ABCD Ansatz A:B = D:C -->  A = B * D/C
 
 */
 
-Double_t simultaneousABCD(const Double_t n[4], const Double_t s[4], const Double_t b[4], const Double_t c[4],
+HypoTestInvTool::LimitResults simultaneousABCD(const Double_t n[4], const Double_t s[4], const Double_t b[4], const Double_t c[4],
 	TString out_filename = "ABCD_ws.root",
 	Bool_t useB = kFALSE, // Use background as estimated in MC
 	Bool_t useC = kFALSE, // Use other background events (do subtraction of c above
@@ -39,7 +40,7 @@ Double_t simultaneousABCD(const Double_t n[4], const Double_t s[4], const Double
 	Int_t calcType = 0 // 0 for toys, 2 for asym fit
 );
 
-inline Double_t simultaneousABCD(const std::vector<double> &n,
+inline HypoTestInvTool::LimitResults simultaneousABCD(const std::vector<double> &n,
 	const std::vector<double> &s,
 	const std::vector<double> &b,
 	const std::vector<double> &c,
@@ -75,12 +76,22 @@ inline limit_result do_abcd_limit(const ABCD &data, const signal_lifetime &expec
 {
 	std::vector<double> dummy(4);
 
+	auto limit = simultaneousABCD(ABCD_as_vector(data), ABCD_as_vector(expected_signal.signalEvents),
+		dummy, dummy,
+		"limit_calc.root",
+		false, false,
+		data.A == 0,
+		config.useToys ? 0 : 2);
+
 	std::cout << "Limit. data: " << data << "  expected signal: " << expected_signal << std::endl;
+	std::cout << "  -> " << limit << std::endl;
 
 	limit_result r;
-	r.cl_1sigma = 1.0;
-	r.cl_2sigma = 1.0;
-	r.cl_95 = 1.0;
+	r.cl_p1sigma = limit.sigma_plus_1;
+	r.cl_p2sigma = limit.sigma_plus_2;
+	r.cl_n1sigma = limit.sigma_minus_1;
+	r.cl_n2sigma = limit.sigma_minus_2;
+	r.cl_95 = limit.median;
 	r.signal = expected_signal;
 	r.observed_data = data;
 	return r;

@@ -3,6 +3,8 @@
 
 #include "RooStats/HypoTestInverterResult.h"
 
+#include <ostream>
+
 //
 // Tool to run XXXX
 //
@@ -23,8 +25,11 @@ public:
 			const char * nuisPriorName = 0);
 
 
+	struct LimitResults {
+		double median, sigma_plus_1, sigma_minus_1, sigma_plus_2, sigma_minus_2;
+	};
 
-	Double_t
+	LimitResults
 		AnalyzeResult(RooStats::HypoTestInverterResult * r,
 			int calculatorType,
 			int testStatType,
@@ -60,5 +65,10 @@ private:
 	std::string mMinimizerType;                  // minimizer type (default is what is in ROOT::Math::MinimizerOptions::DefaultMinimizerType()
 	TString     mResultFileName;
 };
+
+inline std::ostream &operator<< (std::ostream &s, const HypoTestInvTool::LimitResults &r) {
+	s << "95%=" << r.median << " +1s=" << r.sigma_plus_1 << " -1s=" << r.sigma_minus_1 << " +2s=" << r.sigma_plus_2 << " -2s=" << r.sigma_minus_2;
+	return s;
+}
 
 #endif

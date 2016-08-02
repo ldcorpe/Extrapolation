@@ -56,8 +56,10 @@ limit_result rescale_limit_by_efficiency(const limit_result &original,
 	// from signal that are compatible with observed data and errors. So that number
 	// of events is what will remain constant. Rescale mu keeping that in mind.
 	result.cl_95 *= original.signal.signalEvents.A / result.signal.signalEvents.A;
-	result.cl_1sigma *= original.signal.signalEvents.A / result.signal.signalEvents.A;
-	result.cl_2sigma *= original.signal.signalEvents.A / result.signal.signalEvents.A;
+	result.cl_p1sigma *= original.signal.signalEvents.A / result.signal.signalEvents.A;
+	result.cl_p2sigma *= original.signal.signalEvents.A / result.signal.signalEvents.A;
+	result.cl_n1sigma *= original.signal.signalEvents.A / result.signal.signalEvents.A;
+	result.cl_n2sigma *= original.signal.signalEvents.A / result.signal.signalEvents.A;
 
 	return result;
 }

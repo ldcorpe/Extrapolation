@@ -32,8 +32,10 @@ struct limit_result {
 	ABCD observed_data;
 	signal_lifetime signal;
 	double cl_95;
-	double cl_1sigma;
-	double cl_2sigma;
+	double cl_p1sigma;
+	double cl_p2sigma;
+	double cl_n1sigma;
+	double cl_n2sigma;
 };
 
 // Some output operators to make debugging/dumping a little easier.

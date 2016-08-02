@@ -130,7 +130,7 @@ HypoTestInvTool::SetParameter(const char * name, const char * value) {
 	return;
 }
 
-Double_t
+HypoTestInvTool::LimitResults
 HypoTestInvTool::AnalyzeResult(HypoTestInverterResult * r,
 	int calculatorType,
 	int testStatType,
@@ -162,25 +162,21 @@ HypoTestInvTool::AnalyzeResult(HypoTestInverterResult * r,
 		std::cout << "The computed lower limit is: " << lowerLimit << " +/- " << llError << std::endl;
 	std::cout << "The computed upper limit is: " << upperLimit << " +/- " << ulError << std::endl;
 
+	// Create result, log it.
+	LimitResults results;
+	results.median = r->GetExpectedUpperLimit(0);
+	results.sigma_plus_1 = r->GetExpectedUpperLimit(1);
+	results.sigma_minus_1 = r->GetExpectedUpperLimit(-1);
+	results.sigma_plus_2 = r->GetExpectedUpperLimit(2);
+	results.sigma_minus_2 = r->GetExpectedUpperLimit(-2);
+
 	// compute expected limit
 	std::cout << "Expected upper limits, using the B (alternate) model : " << std::endl;
-	std::cout << " expected limit (median) " << r->GetExpectedUpperLimit(0) << std::endl;
-	std::cout << " expected limit (-1 sig) " << r->GetExpectedUpperLimit(-1) << std::endl;
-	std::cout << " expected limit (+1 sig) " << r->GetExpectedUpperLimit(1) << std::endl;
-	std::cout << " expected limit (-2 sig) " << r->GetExpectedUpperLimit(-2) << std::endl;
-	std::cout << " expected limit (+2 sig) " << r->GetExpectedUpperLimit(2) << std::endl;
-
-	//formatted ouput for cut&paste into code
-	//std::cout << std::endl;
-	//std::cout << "Double_t muobs   = " << upperLimit << ";" << std::endl;
-	//std::cout << "Double_t muexp   = " << r->GetExpectedUpperLimit(0) << ";" << std::endl;
-	//std::cout << "Double_t muexpm2 = " << r->GetExpectedUpperLimit(-2) << ";" << std::endl;
-	//std::cout << "Double_t muexpm1 = " << r->GetExpectedUpperLimit(-1) << ";" << std::endl;
-	//std::cout << "Double_t muexpp1 = " << r->GetExpectedUpperLimit(1) << ";" << std::endl;
-	//std::cout << "Double_t muexpp2 = " << r->GetExpectedUpperLimit(2) << ";" << std::endl;
-	//std::cout << std::endl;
-
-	Double_t SGexpected = r->GetExpectedUpperLimit(0);
+	std::cout << " expected limit (median) " << results.median << std::endl;
+	std::cout << " expected limit (-1 sig) " << results.sigma_minus_1 << std::endl;
+	std::cout << " expected limit (+1 sig) " << results.sigma_plus_1 << std::endl;
+	std::cout << " expected limit (-2 sig) " << results.sigma_minus_2 << std::endl;
+	std::cout << " expected limit (+2 sig) " << results.sigma_plus_2 << std::endl;
 
 	// write result in a file 
 	if (r != NULL && mWriteResult) {
@@ -257,7 +253,7 @@ HypoTestInvTool::AnalyzeResult(HypoTestInverterResult * r,
 		}
 	}
 
-	return SGexpected;
+	return results;
 }
 
 
