@@ -12,7 +12,7 @@
 using namespace std;
 
 // Helper functions
-limit_result rescale_limit_by_efficiency(const limit_result &original, const vector<double> &original_lifetime, const vector<double> &new_lifetime);
+limit_result rescale_limit_by_efficiency(const limit_result &original, const signal_lifetime &original_lifetime, const signal_lifetime &new_lifetime);
 
 // Extrapolate vs lifetime by:
 //  1. Calculate the limit where the sample was generated
@@ -35,7 +35,7 @@ void extrapolate_limit_to_lifetime_by_efficency(const extrap_file_wrapper &input
 	transform(lifetimes.begin(), lifetimes.end(), back_inserter(results),
 		[&generated_limit, &generated, &input](double ctau)
 		{
-			return rescale_limit_by_efficiency(generated_limit, generated.efficiency, input.lifetime(ctau).efficiency);
+			return rescale_limit_by_efficiency(generated_limit, generated, input.lifetime(ctau));
 		}
 	);
 
@@ -47,14 +47,11 @@ void extrapolate_limit_to_lifetime_by_efficency(const extrap_file_wrapper &input
 // The beauty about doing this this way, is that signal strength, which is what the limit it, does not
 // change. Just the expected signal.
 limit_result rescale_limit_by_efficiency(const limit_result &original,
-	const vector<double> &original_efficiency,
-	const vector<double> &new_efficiency)
+	const signal_lifetime &original_efficiency,
+	const signal_lifetime &new_efficiency)
 {
 	auto result = original;
-	result.expected_signal.A *= new_efficiency[A] / original_efficiency[A];
-	result.expected_signal.B *= new_efficiency[B] / original_efficiency[B];
-	result.expected_signal.C *= new_efficiency[C] / original_efficiency[C];
-	result.expected_signal.D *= new_efficiency[D] / original_efficiency[D];
+	result.expected_signal = new_efficiency.signalEvents;
 
 	return result;
 }

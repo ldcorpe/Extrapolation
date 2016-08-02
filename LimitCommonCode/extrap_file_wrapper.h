@@ -16,6 +16,7 @@
 class extrap_file_wrapper {
 public:
 	inline extrap_file_wrapper(const std::string &filename)
+		: _loaded_generated_info(false)
 	{
 		_file = std::unique_ptr<TFile>(TFile::Open(filename.c_str(), "READ"));
 		if (!_file->IsOpen()) {

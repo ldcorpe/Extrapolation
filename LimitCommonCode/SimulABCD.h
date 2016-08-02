@@ -78,6 +78,11 @@ inline limit_result do_abcd_limit(const ABCD &data, const ABCD &expected_signal,
 	std::cout << "Limit. data: " << data << "  expected signal: " << expected_signal << std::endl;
 
 	limit_result r;
+	r.cl_1sigma = 1.0;
+	r.cl_2sigma = 1.0;
+	r.cl_95 = 1.0;
+	r.expected_signal = expected_signal;
+	r.observed_data = data;
 	return r;
 }
 #endif
