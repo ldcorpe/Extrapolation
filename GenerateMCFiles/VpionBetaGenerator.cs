@@ -36,7 +36,7 @@ namespace GenerateMCFiles
                              let llp2 = evt.Data.LLPs[1]
                              let jets = evt.Data.Jets
                                             .Where(j => j.pT > 100.0 && Abs(j.eta) < 2.5)
-                                            .OrderByDescending(j => j.pT)
+                                            .OrderByDescending(j => j.CalibJet_BDT)
                                             .Take(2)
                              let j1 = jets.FirstOrDefault()
                              let j2 = jets.Skip(1).FirstOrDefault()
