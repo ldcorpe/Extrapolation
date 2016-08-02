@@ -15,11 +15,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)CalRLJConverter.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)extrap_file_wrapper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)HypoTestInvTool.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)limitSetting.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)limit_datastructures.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)limit_output_file.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)SimulABCD.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)HypoTestInvTool.cxx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)limitSetting.cxx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)run_ABCD.cxx" />
   </ItemGroup>
 </Project>

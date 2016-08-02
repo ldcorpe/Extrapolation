@@ -1,6 +1,8 @@
 #ifndef __SimulABCD__
 #define __SimulABCD__
 
+#include "limit_datastructures.h"
+
 #include "TROOT.h"
 
 /*
@@ -56,5 +58,7 @@ inline Double_t simultaneousABCD(const std::vector<double> &n,
 	return simultaneousABCD(&(n[0]), &(s[0]), &(b[0]), &(c[0]),
 		out_filename, useB, useC, blindA, calcType);
 }
+
+inline limit_result do_abcd_limit(const ABCD &data, const ABCD &expected_signal, const abcd_limit_config &config);
 #endif
 
