@@ -41,28 +41,28 @@ namespace GenerateMCFiles
                              let llp2 = evt.Data.LLPs[1]
                              let jets = evt.Data.Jets
                                             .Where(j => j.pT > 100.0 && Abs(j.eta) < 2.5)
-                                            .OrderByDescending(j => j.CalibJet_BDT)
+                                            .OrderByDescending(j => j.BDT13Lxy)
                                             .Take(2)
                              let j1 = jets.FirstOrDefault()
                              let j2 = jets.Skip(1).FirstOrDefault()
                              let isSelected = jets.Count() != 2
                                 ? false
                                 : eventSelector.eventSelection(j1.pT, j2.pT, j1.eta, j2.eta, j1.isGoodLLP, j2.isGoodLLP,
-                                    j1.phi, j2.phi, j1.CalibJet_time, j2.CalibJet_time, evt.Data.event_HTMiss, evt.Data.event_HT)
+                                    j1.phi, j2.phi, j1.time, j2.time, evt.Data.event_HTMiss, evt.Data.event_HT)
                              let minDR2Sum = jets.Where(j => j.pT > 50.0 && Abs(j.eta) < 2.5).Sum(j => j.CalibJet_minDRTrkpt2)
                              let passedTrigger = evt.Data.event_passCalRatio_TAU60
                              let region = (jets.Count() != 2)
                                 ? 0
-                                : eventSelector.ABCDPlane(j1.pT, j2.pT, j1.CalibJet_BDT, j2.CalibJet_BDT, minDR2Sum)
+                                : eventSelector.ABCDPlane(j1.pT, j2.pT, j1.BDT13Lxy, j2.BDT13Lxy, minDR2Sum)
                              select new VpionData
                              {
                                  PassedCalRatio = passedTrigger,
-                                 llp1_E = llp1.LLP_E,
+                                 llp1_E = llp1.E,
                                  llp1_eta = llp1.eta,
                                  llp1_phi = llp1.phi,
                                  llp1_pt = llp1.pT,
                                  llp1_Lxy = llp1.Lxy,
-                                 llp2_E = llp2.LLP_E,
+                                 llp2_E = llp2.E,
                                  llp2_eta = llp2.eta,
                                  llp2_phi = llp2.phi,
                                  llp2_pt = llp2.pT,
