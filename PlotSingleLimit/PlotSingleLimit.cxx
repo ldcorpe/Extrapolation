@@ -43,6 +43,6 @@ int main(int argc, char *argv[])
 unique_ptr<TGraphAsymmErrors> get_efficiency_vs_lifetime(const string & filename)
 {
 	auto file = unique_ptr<TFile>(TFile::Open(filename.c_str(), "READ"));
-	auto r = unique_ptr<TFile>(static_cast<TGraphAsymmErrors*>(file->Get("")));
+	auto r = unique_ptr<TGraphAsymmErrors>(static_cast<TGraphAsymmErrors*>(file->Get("")));
 	return unique_ptr<TGraphAsymmErrors>();
 }
