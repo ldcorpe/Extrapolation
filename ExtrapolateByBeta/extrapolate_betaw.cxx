@@ -27,6 +27,7 @@
 #include "TFile.h"
 #include "TGraphAsymmErrors.h"
 #include "TTree.h"
+#include "TSystem.h"
 
 #include <iostream>
 #include <string>
@@ -45,6 +46,7 @@ size_t n_tau_loops = 5;
 // Helper methods
 struct extrapolate_config {
 	string _muon_tree_root_file;
+	string _output_filename;
 	double _tau_gen;
 };
 extrapolate_config parse_command_line(int argc, char **argv);
@@ -139,7 +141,7 @@ int main(int argc, char**argv)
 		}
 
 		// Save plots in the output file
-		auto output_file = unique_ptr<TFile>(TFile::Open("extrapolate_betaw_results.root", "RECREATE"));
+		auto output_file = unique_ptr<TFile>(TFile::Open(config._output_filename.c_str(), "RECREATE"));
 		for (int i_region = 0; i_region < 4; i_region++) {
 			output_file->Add(h_res_eff[i_region]);
 		}
@@ -169,10 +171,11 @@ int main(int argc, char**argv)
 // Parse the command line.
 extrapolate_config parse_command_line(int argc, char **argv)
 {
-	if (argc != 3) {
-		cout << "Usage: extrapolate_betaw <muonTree-file> <generated-ctau>" << endl;
+	if (argc != 4) {
+		cout << "Usage: extrapolate_betaw <muonTree-file> <output-filename> <generated-ctau>" << endl;
 		cout << endl;
 		cout << "    <muonTree-file>           TFile containing the muonTree root file generated from a particular MC sample." << endl;
+		cout << "    <output-filename>		   ROOT filename for output" << endl;
 		cout << "    <generated-ctau>          The lifetime (in meters) where the sample was generated." << endl;
 
 		throw runtime_error("Wrong number of arguments");
@@ -180,7 +183,8 @@ extrapolate_config parse_command_line(int argc, char **argv)
 
 	extrapolate_config r;
 	r._muon_tree_root_file = argv[1];
-	r._tau_gen = atof(argv[2]);
+	r._output_filename = argv[2];
+	r._tau_gen = atof(argv[3]);
 	return r;
 }
 
