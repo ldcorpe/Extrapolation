@@ -40,16 +40,15 @@ namespace GenerateMCFiles
                              let llp1 = evt.Data.LLPs[0]
                              let llp2 = evt.Data.LLPs[1]
                              let jets = evt.Data.Jets
-                                            .Where(j => j.pT > 100.0 && Abs(j.eta) < 2.5 && j.isGoodLLP)
                                             .OrderByDescending(j => j.BDT13Lxy)
                                             .Take(2)
                              let j1 = jets.FirstOrDefault()
                              let j2 = jets.Skip(1).FirstOrDefault()
+                             let minDR2Sum = jets.Where(j => j.pT > 50.0 && Abs(j.eta) < 2.5 && j.isGoodLLP).Sum(j => j.CalibJet_minDRTrkpt2)
                              let isSelected = jets.Count() != 2
                                 ? false
                                 : eventSelector.eventSelection(j1.pT, j2.pT, j1.eta, j2.eta, j1.isGoodLLP, j2.isGoodLLP,
-                                    j1.phi, j2.phi, j1.time, j2.time, evt.Data.event_HTMiss, evt.Data.event_HT)
-                             let minDR2Sum = jets.Where(j => j.pT > 50.0 && Abs(j.eta) < 2.5).Sum(j => j.CalibJet_minDRTrkpt2)
+                                    j1.phi, j2.phi, j1.time, j2.time, evt.Data.event_HTMiss, evt.Data.event_HT, minDR2Sum)
                              let passedTrigger = evt.Data.event_passCalRatio_TAU60
                              let region = (jets.Count() != 2)
                                 ? 0
@@ -57,6 +56,7 @@ namespace GenerateMCFiles
                              select new VpionData
                              {
                                  PassedCalRatio = passedTrigger,
+                                 eventNumber = evt.Data.eventNumber,
                                  llp1_E = llp1.E,
                                  llp1_eta = llp1.eta,
                                  llp1_phi = llp1.phi,
@@ -69,10 +69,10 @@ namespace GenerateMCFiles
                                  llp2_Lxy = llp2.Lxy,
                                  event_weight = evt.Data.eventWeight,
                                  // TODO: get from Emma how to do this correctly (once we figure it out!!)
-                                 RegionA = passedTrigger && region == 1,
-                                 RegionB = passedTrigger && region == 2,
-                                 RegionC = passedTrigger && region == 3,
-                                 RegionD = passedTrigger && region == 4
+                                 RegionA = passedTrigger && isSelected && region == 1,
+                                 RegionB = passedTrigger && isSelected && region == 2,
+                                 RegionC = passedTrigger && isSelected && region == 3,
+                                 RegionD = passedTrigger && isSelected && region == 4
                              };
 
             // Now, write it out to a file.
@@ -111,6 +111,7 @@ namespace GenerateMCFiles
         /// </summary>
         public class VpionData
         {
+            public int eventNumber;
             /// <summary>
             /// Did it pass the CalRatio trigger?
             /// </summary>
@@ -194,7 +195,7 @@ namespace GenerateMCFiles
             // Emit the specific code depending on which method is getting called.
             if (methodName == "eventSelection")
             {
-                yield return "eventSelection = event_selection(j1_pt, j2_pt, j1_eta, j2_eta, j1_isGoodLLP, j2_isGoodLLP, j1_phi, j2_phi, j1_time, j2_time, event_HTMiss, event_HT);";
+                yield return "eventSelection = event_selection(j1_pt, j2_pt, j1_eta, j2_eta, j1_isGoodLLP, j2_isGoodLLP, j1_phi, j2_phi, j1_time, j2_time, event_HTMiss, event_HT,sumMinDRTrk2pt50);";
             }
             else if (methodName == "ABCDPlane")
             {
@@ -228,7 +229,8 @@ namespace GenerateMCFiles
             bool j1_isGoodLLP, bool j2_isGoodLLP,
             double j1_phi, double j2_phi,
             double j1_time, double j2_time,
-            double event_HTMiss, double event_HT)
+            double event_HTMiss, double event_HT,
+            double sumMinDRTrk2pt50)
         {
             throw new InvalidOperationException("Should never get called by C# code!");
         }
