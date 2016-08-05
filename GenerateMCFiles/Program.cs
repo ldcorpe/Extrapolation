@@ -28,7 +28,7 @@ namespace GenerateMCFiles
             // Parse the command parameters
             var opt = CommandLineUtils.ParseOptions<Options>(args);
 
-            libDataAccess.Files.JobVersionNumber = 7;
+            libDataAccess.Files.JobVersionNumber = 8;
             // Next, for each dataset, write out the files.
             foreach (var ds in opt.Datasets)
             {
