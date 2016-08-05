@@ -9,29 +9,3 @@ Legend("RegionA" => {Color => 1, Title => "A"});
 Legend("RegionB" => {Color => 2, Title => "B"});
 Legend("RegionC" => {Color => 3, Title => "C"});
 Legend("RegionD" => {Color => 4, Title => "D"});
-
-Legend("200pi25lt5mw" => {Color => 1, Title => "200/25 - 5m (Width Bug)"});
-Legend("200pi25lt5m" => {Color => 2, Title => "200/25 - 5m"});
-Legend("400pi100lt5mW" => {Color => 3, Title => "400/100 - 5m (Width Bug)"});
-Legend("400pi100lt5m" => {Color => 4, Title => "400/100 - 5m"});
-Legend("600pi50lt5mW" => {Color => 5, Title => "600/50 - 5m (Width Bug)"});
-Legend("600pi50lt5m" => {Color => 6, Title => "600/50 - 5m"});
-Legend("1000pi400lt5mW" => {Color => 7, Title => "1000/400 - 5m (Width Bug)"});
-Legend("1000pi400lt5m" => {Color => 8, Title => "1000/400 - 5m"});
-
-Legend("125pi25lt5m" => {Color => 9, Title => "124/25 - 5m"});
-Legend("400pi50lt5m" => {Color => 11, Title => "400/50 - 5m"});
-
-# Some legend stuff to help out
-Legend("200-25" => {Color => 1, Title => "200-25"});
-Legend("400-100" => {Color => 2, Title => "400-100"});
-Legend("600-150" => {Color => 3, Title => "600-150"});
-
-# Pt ranges
-ptBins = ["0_25", "25_40", "40_60", "60_120", "120_200", "200_1000"];
-Legend("0_25" => {Color => 1, Title => "0 < p_{T} < 25"});
-Legend("25_40" => {Color => 2, Title => "25 < p_{T} < 40"});
-Legend("40_60" => {Color => 3, Title => "40 < p_{T} < 60"});
-Legend("60_120" => {Color => 4, Title => "60 < p_{T} < 120"});
-Legend("120_200" => {Color => 5, Title => "120 < p_{T} < 200"});
-Legend("200_1000" => {Color => 6, Title => "200 < p_{T} < 1000"});
