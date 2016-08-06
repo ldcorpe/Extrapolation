@@ -44,7 +44,9 @@ namespace GenerateMCFiles
                                             .Take(2)
                              let j1 = jets.FirstOrDefault()
                              let j2 = jets.Skip(1).FirstOrDefault()
-                             let minDR2Sum = jets.Where(j => j.pT > 50.0 && Abs(j.eta) < 2.5 && j.isGoodLLP).Sum(j => j.CalibJet_minDRTrkpt2)
+                             let minDR2Sum = evt.Data.Jets
+                                                .Where(j => j.pT > 50.0 && Abs(j.eta) < 2.5 && j.isGoodLLP)
+                                                .Sum(j => j.CalibJet_minDRTrkpt2)
                              let isSelected = jets.Count() != 2
                                 ? false
                                 : eventSelector.eventSelection(j1.pT, j2.pT, j1.eta, j2.eta, j1.isGoodLLP, j2.isGoodLLP,
@@ -87,6 +89,12 @@ namespace GenerateMCFiles
             var totalD = dataStream.Where(t => t.RegionD).FutureCount();
 
             FutureConsole.FutureWriteLine(() => $"EventInfo: {namePostfix} {total.Value} {totalA.Value} {totalB.Value} {totalC.Value} {totalD.Value}");
+
+#if DEBUG_TEST
+            var csvdata = dataStream
+                .Where(e => e.RegionA || e.RegionB || e.RegionC || e.RegionD)
+                .FutureAsCSV(new FileInfo("events-in-signal-region.csv"));
+#endif
 
             // Return only the first file - as there should be no more than that!
             return f
