@@ -12,6 +12,7 @@ const double lxy_max = 5.0; // lxy maximum in meters
 // Calcualte the weight histogram
 // Note: In Run1 this was done during the actual running on MC that generates this ntuple. But by doing it here
 //       we better keep cuts consistent by keeping them close to each other.
+// Note: this is not weighted, but the beta shape is (so we don't do weights twice).
 Lxy_weight_calculator::Lxy_weight_calculator(const muon_tree_processor &reader)
 {
 	// Events where they were generated and where they passed the analysis selection
@@ -27,18 +28,18 @@ Lxy_weight_calculator::Lxy_weight_calculator(const muon_tree_processor &reader)
 	passedD->Sumw2();
 
 	reader.process_all_entries([&generated, &passedA, &passedB, &passedC, &passedD](const muon_tree_processor::eventInfo &entry) {
-		generated->Fill(entry.vpi1_Lxy/1000.0, entry.vpi2_Lxy/1000.0);
+		generated->Fill(entry.vpi1_Lxy/1000.0, entry.vpi2_Lxy/1000.0, entry.weight);
 		if (entry.RegionA) {
-			passedA->Fill(entry.vpi1_Lxy/1000.0, entry.vpi2_Lxy/1000.0);
+			passedA->Fill(entry.vpi1_Lxy/1000.0, entry.vpi2_Lxy/1000.0, entry.weight);
 		}
 		if (entry.RegionB) {
-			passedB->Fill(entry.vpi1_Lxy / 1000.0, entry.vpi2_Lxy / 1000.0);
+			passedB->Fill(entry.vpi1_Lxy / 1000.0, entry.vpi2_Lxy / 1000.0, entry.weight);
 		}
 		if (entry.RegionC) {
-			passedC->Fill(entry.vpi1_Lxy / 1000.0, entry.vpi2_Lxy / 1000.0);
+			passedC->Fill(entry.vpi1_Lxy / 1000.0, entry.vpi2_Lxy / 1000.0, entry.weight);
 		}
 		if (entry.RegionD) {
-			passedD->Fill(entry.vpi1_Lxy / 1000.0, entry.vpi2_Lxy / 1000.0);
+			passedD->Fill(entry.vpi1_Lxy / 1000.0, entry.vpi2_Lxy / 1000.0, entry.weight);
 		}
 	});
 
