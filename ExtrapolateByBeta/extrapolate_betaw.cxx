@@ -41,7 +41,9 @@ using namespace std;
 // Some config constants
 
 // How many loops in tau should we do?
-size_t n_tau_loops = 5;
+size_t n_tau_loops = 20;
+// For the study for the number of loops, see the logbook. But this will affect if the extrap
+// at each lifetime stablieses, so change it with care.
 
 // Helper methods
 struct extrapolate_config {
