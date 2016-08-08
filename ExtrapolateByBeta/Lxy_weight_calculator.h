@@ -25,7 +25,9 @@ public:
 		if (region < 0 || region > 3) {
 			throw std::runtime_error("Illegial region number");
 		}
-		return std::unique_ptr<TH2D>(static_cast<TH2D*>(_pass_weight[region]->Clone()));
+		auto a = std::unique_ptr<TH2D>(static_cast<TH2D*>(_pass_weight[region]->Clone()));
+		a->SetDirectory(nullptr);
+		return a;
 	}
 
 private:

@@ -148,6 +148,11 @@ int main(int argc, char**argv)
 			output_file->Add(h_res_eff[i_region]);
 		}
 
+		// Save the Lxy efficiency plot
+		for (int i = 0; i < 4; i++) {
+			output_file->Add(lxy_weight.clone_weight(i).release());
+		}
+
 		// Save basic information for the generated sample.
 		output_file->Add(save_as_histo("generated_ctau", config._tau_gen).release());
 		output_file->Add(save_as_histo("n_passed_as_generated", passedEventsAtGen).release());

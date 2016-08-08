@@ -3,7 +3,7 @@
 using namespace std;
 
 // Defien the constants for the Lxy1 and Lxy2 binning
-const int n_bins = 100; // 100 bins
+const int n_bins = 30; // 100 bins
 const double lxy_min = 0.0; // lxy minimum in meters
 const double lxy_max = 5.0; // lxy maximum in meters
 
@@ -46,13 +46,13 @@ Lxy_weight_calculator::Lxy_weight_calculator(const muon_tree_processor &reader)
 	// The key is the ratio.
 	// We can't use ROOT sumw2 errors because they assume independent histograms. So we use
 	// binomial errors (the "B" option).
-	_pass_weight[0] = unique_ptr<TH2D>(new TH2D("_pass_weightA", "_pass_weightA", n_bins, lxy_min, lxy_max, n_bins, lxy_min, lxy_max));
+	_pass_weight[0] = unique_ptr<TH2D>(new TH2D("_lxy_pass_weightA", "Analysis efficiency Region A; Lxy [m]; Lxy [m]", n_bins, lxy_min, lxy_max, n_bins, lxy_min, lxy_max));
 	_pass_weight[0]->Divide(passedA.get(), generated.get(), 1.0, 1.0, "B");
-	_pass_weight[1] = unique_ptr<TH2D>(new TH2D("_pass_weightB", "_pass_weightB", n_bins, lxy_min, lxy_max, n_bins, lxy_min, lxy_max));
+	_pass_weight[1] = unique_ptr<TH2D>(new TH2D("_lxy_pass_weightB", "Analysis efficiency Region B; Lxy [m]; Lxy [m]", n_bins, lxy_min, lxy_max, n_bins, lxy_min, lxy_max));
 	_pass_weight[1]->Divide(passedB.get(), generated.get(), 1.0, 1.0, "B");
-	_pass_weight[2] = unique_ptr<TH2D>(new TH2D("_pass_weightC", "_pass_weightC", n_bins, lxy_min, lxy_max, n_bins, lxy_min, lxy_max));
+	_pass_weight[2] = unique_ptr<TH2D>(new TH2D("_lxy_pass_weightC", "Analysis efficiency Region C; Lxy [m]; Lxy [m]", n_bins, lxy_min, lxy_max, n_bins, lxy_min, lxy_max));
 	_pass_weight[2]->Divide(passedC.get(), generated.get(), 1.0, 1.0, "B");
-	_pass_weight[3] = unique_ptr<TH2D>(new TH2D("_pass_weightD", "_pass_weightD", n_bins, lxy_min, lxy_max, n_bins, lxy_min, lxy_max));
+	_pass_weight[3] = unique_ptr<TH2D>(new TH2D("_lxy_pass_weightD", "Analysis efficiency Region D; Lxy [m]; Lxy [m]", n_bins, lxy_min, lxy_max, n_bins, lxy_min, lxy_max));
 	_pass_weight[3]->Divide(passedD.get(), generated.get(), 1.0, 1.0, "B");
 }
 
