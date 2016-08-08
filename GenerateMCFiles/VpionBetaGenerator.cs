@@ -69,7 +69,7 @@ namespace GenerateMCFiles
                                  llp2_phi = llp2.phi,
                                  llp2_pt = llp2.pT,
                                  llp2_Lxy = llp2.Lxy,
-                                 event_weight = evt.Data.eventWeight,
+                                 event_weight = evt.Data.eventWeight * evt.Data.pileupEventWeight,
                                  // TODO: get from Emma how to do this correctly (once we figure it out!!)
                                  RegionA = passedTrigger && isSelected && region == 1,
                                  RegionB = passedTrigger && isSelected && region == 2,
@@ -89,6 +89,15 @@ namespace GenerateMCFiles
             var totalD = dataStream.Where(t => t.RegionD).FutureCount();
 
             FutureConsole.FutureWriteLine(() => $"EventInfo: {namePostfix} {total.Value} {totalA.Value} {totalB.Value} {totalC.Value} {totalD.Value}");
+
+            // Total up everything for final numbers, and dump it out. Use weights
+            var totalW = dataStream.FutureAggregate(0.0, (ac, ev) => ac + ev.event_weight);
+            var totalAW = dataStream.Where(t => t.RegionA).FutureAggregate(0.0, (ac, ev) => ac + ev.event_weight);
+            var totalBW = dataStream.Where(t => t.RegionB).FutureAggregate(0.0, (ac, ev) => ac + ev.event_weight);
+            var totalCW = dataStream.Where(t => t.RegionC).FutureAggregate(0.0, (ac, ev) => ac + ev.event_weight);
+            var totalDW = dataStream.Where(t => t.RegionD).FutureAggregate(0.0, (ac, ev) => ac + ev.event_weight);
+
+            FutureConsole.FutureWriteLine(() => $"EventInfo (weighted): {namePostfix} {totalW.Value:F1} {totalAW.Value:F1} {totalBW.Value:F1} {totalCW.Value:F1} {totalDW.Value:F1}");
 
 #if DEBUG_TEST
             var csvdata = dataStream
