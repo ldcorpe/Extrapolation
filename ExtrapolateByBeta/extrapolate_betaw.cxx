@@ -153,6 +153,13 @@ int main(int argc, char**argv)
 			output_file->Add(lxy_weight.clone_weight(i).release());
 		}
 
+		// The default as-generated beta shape
+		for (int i = 0; i < 4; i++) {
+			auto h = static_cast<TH2F*>(h_gen_ratio[i]->Clone());
+			h->SetDirectory(nullptr);
+			output_file->Add(h);
+		}
+
 		// Save basic information for the generated sample.
 		output_file->Add(save_as_histo("generated_ctau", config._tau_gen).release());
 		output_file->Add(save_as_histo("n_passed_as_generated", passedEventsAtGen).release());
@@ -303,11 +310,13 @@ template<class T>
 vector<unique_ptr<T>> DivideShape(const pair<vector<unique_ptr<T>>, unique_ptr<T>> &r, const string &name, const string &title)
 {
 	vector<unique_ptr<T>> result;
+	char region = 'A';
 	for (auto &info : r.first) {
 		unique_ptr<T> ratio(static_cast<T*>(info->Clone()));
 		ratio->Divide(info.get(), r.second.get(), 1.0, 1.0, "B");
-		ratio->SetNameTitle(name.c_str(), title.c_str());
+		ratio->SetNameTitle((name + region).c_str(), (title + " " + region + "; Beta; Beta").c_str());
 		result.push_back(move(ratio));
+		region++;
 	}
 
 	return result;
