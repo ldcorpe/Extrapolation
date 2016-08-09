@@ -17,9 +17,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LimitCommonCode", "LimitCom
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExtrapLimitFinder", "ExtrapLimitFinder\ExtrapLimitFinder.vcxproj", "{F6ACE4B3-43FA-436F-AABC-268A4649DCC4}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CommonLimitUtils", "CommonLimitUtils\CommonLimitUtils.vcxitems", "{838A141A-DECF-44FB-B930-95608F806E43}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		LimitCommonCode\LimitCommonCode.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
+		CommonLimitUtils\CommonLimitUtils.vcxitems*{838a141a-decf-44fb-b930-95608f806e43}*SharedItemsImports = 9
+		CommonLimitUtils\CommonLimitUtils.vcxitems*{c5eea94b-6de6-4101-bfd4-c6d51ba97041}*SharedItemsImports = 4
 		LimitCommonCode\LimitCommonCode.vcxitems*{e43b2049-e303-4dd9-a2b1-d17ba946f429}*SharedItemsImports = 4
 		LimitCommonCode\LimitCommonCode.vcxitems*{f6ace4b3-43fa-436f-aabc-268a4649dcc4}*SharedItemsImports = 4
 	EndGlobalSection

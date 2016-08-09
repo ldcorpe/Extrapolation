@@ -18,6 +18,15 @@ plots.plot()
 	.size(1200,800)
 	.filename("eff_extrap");
 
+f_lifetime.Get("h_res_eff_A")
+	.plot()
+	.xaxis("Lifetime [m]")
+	.yaxis("Efficiency")
+	.title("")
+	.size(1200,800)
+	.filename("eff_extrap_A");
+
+
 normplots = map(p, plots) {
 	p.normalize();
 };
