@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 			extrapolate_limit_to_lifetime_by_efficency (input_file, c.observed_data, c.limit_settings);
 		}
 		else {
-			extrapolate_limit_to_lifetime              (input_file, c.observed_data, c.limit_settings);
+			extrapolate_limit_to_lifetime (input_file, c.observed_data, c.limit_settings);
 		}
 	}
 	catch (exception &e) {

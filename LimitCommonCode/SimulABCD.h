@@ -62,21 +62,26 @@ inline HypoTestInvTool::LimitResults simultaneousABCD(const std::vector<double> 
 		out_filename, useB, useC, blindA, calcType);
 }
 
-inline std::vector<double> ABCD_as_vector(const ABCD &events)
+// Convert to a vector that we can pass to the simultanious fitter.
+// TODO: Move this and do_abcd_limit out of this file to prevent confusion.
+inline std::vector<double> ABCD_as_vector_CalRToLJ(const ABCD &events)
 {
 	std::vector<double> n;
 	n.push_back(events.A);
 	n.push_back(events.B);
-	n.push_back(events.C);
 	n.push_back(events.D);
+	n.push_back(events.C);
 	return n;
 }
 
+// Calculate the limit, and fill in all the results, and return it.
+// Note that the conversion between LJ and CalR world is done here!
 inline limit_result do_abcd_limit(const ABCD &data, const signal_lifetime &expected_signal, const abcd_limit_config &config)
 {
 	std::vector<double> dummy(4);
+	fill(dummy.begin(), dummy.end(), 0.0);
 
-	auto limit = simultaneousABCD(ABCD_as_vector(data), ABCD_as_vector(expected_signal.signalEvents),
+	auto limit = simultaneousABCD(ABCD_as_vector_CalRToLJ(data), ABCD_as_vector_CalRToLJ(expected_signal.signalEvents),
 		dummy, dummy,
 		"limit_calc.root",
 		false, false,
