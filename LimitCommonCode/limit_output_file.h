@@ -68,6 +68,8 @@ inline void write_limit_output_file(const abcd_limit_config &lconfig, const std:
 {
 	auto f = std::unique_ptr<TFile>(TFile::Open(lconfig.fileName.c_str(), "RECREATE"));
 
+	double lumi = 3.2 * 1000; //pb^-1
+
 	// Plot signal strength
 	make_group_plotter(results.size(), "mu_95", "mu_sigma_",
 		[](const limit_result &r) { return r.cl_95; },
@@ -77,7 +79,7 @@ inline void write_limit_output_file(const abcd_limit_config &lconfig, const std:
 		[](const limit_result &r) { return r.cl_n2sigma; }
 	)(results);
 
-	// Plot number of events that are expected
+	// Plot number of events that are expected at this lifetime
 	make_group_plotter(results.size(), "expected_events_95CL", "expected_allowed_events_",
 		[](const limit_result &r) { return r.signal.signalEvents.A; },
 		[](const limit_result &r) { return r.signal.signalEvents.A; },
@@ -95,19 +97,14 @@ inline void write_limit_output_file(const abcd_limit_config &lconfig, const std:
 		[](const limit_result &r) { return r.cl_n2sigma * r.signal.signalEvents.A; }
 		)(results);
 		
-		//auto h_95 = new TH1D("CL_95", "CL_95", results.size(), 0.0, results.size());
-	//auto h_p1sigma = new TH1D("sigma_p1", "sigma_p1", results.size(), 0.0, results.size());
-	//auto h_p2sigma = new TH1D("sigma_p2", "sigma_p2", results.size(), 0.0, results.size());
-	//auto h_n1sigma = new TH1D("sigma_n1", "sigma_n1", results.size(), 0.0, results.size());
-	//auto h_n2sigma = new TH1D("sigma_n2", "sigma_n2", results.size(), 0.0, results.size());
-
-	//for (int i = 0; i < results.size(); i++) {
-	//	h_95->SetBinContent(i + 1, protected_val (results[i].cl_95 * results[i].signal.signalEvents.A / results[i].signal.efficiency[A]));
-	//	h_p1sigma->SetBinContent(i + 1, protected_val(results[i].cl_p1sigma * results[i].signal.signalEvents.A / results[i].signal.efficiency[A]));
-	//	h_p2sigma->SetBinContent(i + 1, protected_val(results[i].cl_p2sigma * results[i].signal.signalEvents.A / results[i].signal.efficiency[A]));
-	//	h_n1sigma->SetBinContent(i + 1, protected_val(results[i].cl_n1sigma * results[i].signal.signalEvents.A / results[i].signal.efficiency[A]));
-	//	h_n2sigma->SetBinContent(i + 1, protected_val(results[i].cl_n2sigma * results[i].signal.signalEvents.A / results[i].signal.efficiency[A]));
-	//}
+	// Plot x-sec X BR
+	make_group_plotter(results.size(), "xsec_BR_95CL", "xsec_BR_events_",
+		[lumi](const limit_result &r) { return r.cl_95 * r.signal.signalEvents.A / r.signal.efficiency[A] / lumi; },
+		[lumi](const limit_result &r) { return r.cl_p1sigma * r.signal.signalEvents.A / r.signal.efficiency[A] / lumi; },
+		[lumi](const limit_result &r) { return r.cl_n1sigma * r.signal.signalEvents.A / r.signal.efficiency[A] / lumi; },
+		[lumi](const limit_result &r) { return r.cl_p2sigma * r.signal.signalEvents.A / r.signal.efficiency[A] / lumi; },
+		[lumi](const limit_result &r) { return r.cl_n2sigma * r.signal.signalEvents.A / r.signal.efficiency[A] / lumi; }
+	)(results);
 
 	f->Write();
 }
