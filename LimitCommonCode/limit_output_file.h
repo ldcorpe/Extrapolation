@@ -12,9 +12,8 @@
 #include <memory>
 
 inline double protected_val(double val) {
-	return val > 10000 ? 10000 
-		: val < 0.0 ? 10000
-		: val;
+	return std::isfinite(val) ? val 
+		: 1000;
 }
 
 inline void write_limit_output_file(const abcd_limit_config &lconfig, const std::vector<limit_result> &results)
