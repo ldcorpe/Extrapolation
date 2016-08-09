@@ -3,9 +3,13 @@
 #
 
 # File we are looking at...
-f_lifetime = jenkins ("http://jenks-higgs.phys.washington.edu:8080/view/LLP/job/Limit-LifetimeEfficiencies/12/artifact/lifetime_eff_600pi150lt5m.root");
+f_lifetime = jenkins ("http://jenks-higgs.phys.washington.edu:8080/view/LLP/job/Limit-LifetimeEfficiencies/14/artifact/lifetime_eff_600pi150lt5m.root");
+f_lifetime_compare = jenkins ("http://jenks-higgs.phys.washington.edu:8080/view/LLP/job/Limit-LifetimeEfficiencies/13/artifact/lifetime_eff_600pi150lt5m.root");
 
 Legend("RegionA" => {Color => 1, Title => "A"});
 Legend("RegionB" => {Color => 2, Title => "B"});
 Legend("RegionC" => {Color => 3, Title => "C"});
 Legend("RegionD" => {Color => 4, Title => "D"});
+
+Legend("original" => {Color => 1, Title => "With Pileup Reweighting"});
+Legend("compare" => {Color => 2, Title => "Without Pileup Reweighting"});
