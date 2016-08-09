@@ -11,9 +11,9 @@
 #include <vector>
 #include <memory>
 
-inline void write_limit_output_file(const std::string &fname, const std::vector<limit_result> &results)
+inline void write_limit_output_file(const abcd_limit_config &lconfig, const std::vector<limit_result> &results)
 {
-	auto f = std::unique_ptr<TFile>(TFile::Open(fname.c_str(), "RECREATE"));
+	auto f = std::unique_ptr<TFile>(TFile::Open(lconfig.fileName.c_str(), "RECREATE"));
 
 	auto h_95 = new TH1D("CL_95", "CL_95", results.size(), 0.0, results.size());
 	auto h_p1sigma = new TH1D("sigma_p1", "sigma_p1", results.size(), 0.0, results.size());

@@ -26,6 +26,7 @@ struct signal_lifetime {
 struct abcd_limit_config {
 	bool useToys; // True if we should run toys, otherwise run asym fit.
 	bool scaleLimitByEfficiency; // True if we should run limit once, and rescale result. False we re-run limit at each lifetime point.
+	std::string fileName; // Output filename for this
 };
 
 // Result (and input parameters) from a limit.

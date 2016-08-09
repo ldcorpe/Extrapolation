@@ -40,7 +40,7 @@ void extrapolate_limit_to_lifetime_by_efficency(const extrap_file_wrapper &input
 	);
 
 	// Great. Next, we have to build the output file and write this!
-	write_limit_output_file("limits.root", results);
+	write_limit_output_file(limit_params, results);
 }
 
 // Extrapolate vs lifetime by:
@@ -65,7 +65,7 @@ void extrapolate_limit_to_lifetime(const extrap_file_wrapper &input,
 	);
 
 	// Great. Next, we have to build the output file and write this!
-	write_limit_output_file("limits.root", results);
+	write_limit_output_file(limit_params, results);
 }
 
 // Given a limit that was generated at a particular lifetime, rescale for the new lifetime.

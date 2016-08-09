@@ -69,6 +69,9 @@ config parse_command_line(int argc, char **argv)
 		Arg("nC", "C", "How many events observed in data in region C", Arg::Is::Required),
 		Arg("nD", "D", "How many events observed in data in region D", Arg::Is::Required),
 
+		// Output options
+		Arg("OutputFile", "f", "Name of output root file for limit results. By default based on input filename", Arg::Is::Optional),
+
 		// Options
 		Flag("UseAsym", "a", "Do asymtotic fit rather than using toys (toys are slow!)", Arg::Is::Optional),
 		Flag("ExtrapAtEachLifetime", "l", "Refit limit at each lifetime point to take into account differing efficiencies at A, B, C and D", Arg::Is::Optional),
@@ -91,6 +94,14 @@ config parse_command_line(int argc, char **argv)
 
 	result.limit_settings.useToys = !args.IsSet("UseAsym");
 	result.limit_settings.scaleLimitByEfficiency = !args.IsSet("ExtrapAtEachLifetime");
+
+
+	auto baseFilename = result.extrapolate_filename.rfind("\\") == string::npos
+		? result.extrapolate_filename
+		: result.extrapolate_filename.substr(result.extrapolate_filename.rfind("\\") + 1);
+	result.limit_settings.fileName = args.IsSet("OutputFile")
+		? args.Get("OutputFile")
+		: string("limit_result_") + baseFilename;
 
 	return result;
 }
