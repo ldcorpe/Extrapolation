@@ -40,7 +40,7 @@ void extrapolate_limit_to_lifetime_by_efficency(const extrap_file_wrapper &input
 	);
 
 	// Great. Next, we have to build the output file and write this!
-	write_limit_output_file(limit_params, results);
+	write_limit_output_file(limit_params, results, input.get_ctau_binning());
 }
 
 // Extrapolate vs lifetime by:
@@ -65,7 +65,7 @@ void extrapolate_limit_to_lifetime(const extrap_file_wrapper &input,
 	);
 
 	// Great. Next, we have to build the output file and write this!
-	write_limit_output_file(limit_params, results);
+	write_limit_output_file(limit_params, results, input.get_ctau_binning());
 }
 
 // Given a limit that was generated at a particular lifetime, rescale for the new lifetime.

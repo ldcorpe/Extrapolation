@@ -1,14 +1,28 @@
 #pragma once
 
 #include <vector>
+#include <TH1D.h>
 
 // Helper class to make making variable binning easy
 class variable_binning_builder {
 public:
-	variable_binning_builder(double low)
+	// Extract the binning from the histogram's x-axis.
+	variable_binning_builder(const TH1D *h)
+	{
+		auto axis = h->GetXaxis();
+		for (int i = 1; i <= axis->GetNbins(); i++) {
+			_v.push_back(axis->GetBinLowEdge(i));
+		}
+		_v.push_back(axis->GetBinUpEdge(axis->GetNbins()));
+	}
+
+	// Start from a point.
+	explicit variable_binning_builder(double low)
 	{
 		_v.push_back(low);
 	}
+
+	// Add number bins, teach bin_width apart.
 	void add_bins(int number, double bin_width)
 	{
 		for (int i = 0; i < number; i++) {

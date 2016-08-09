@@ -5,6 +5,7 @@
 #define __extrap_file_wrapper__
 
 #include "limit_datastructures.h"
+#include "variable_binning_builder.h"
 
 #include <TFile.h>
 #include <TH1D.h>
@@ -74,6 +75,13 @@ public:
 		result.signalEvents.D *= result.efficiency[D] / original.efficiency[D];
 
 		return result;
+	}
+
+	// Return the variable binning that was used for getting the ctau
+	inline variable_binning_builder get_ctau_binning() const
+	{
+		load_efficiencies();
+		return variable_binning_builder(_efficiencies[0]);
 	}
 
 private:
