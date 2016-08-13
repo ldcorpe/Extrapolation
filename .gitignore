@@ -255,3 +255,4 @@ paket-files/
 FindLimit/brasilianFlag.*
 ExtrapLimitFinder/brasilianFlag.*
 *.png
+/Wild/CommandLine.h

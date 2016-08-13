@@ -3,7 +3,6 @@
 //
 
 #include "HypoTestInvTool.h"
-//#include "GlobalConfig.h"
 
 #include "TFile.h"
 #include "TCanvas.h"
@@ -47,9 +46,9 @@ HypoTestInvTool::HypoTestInvTool()
 	mNToysRatio(2),
 	mMaxPoi(-1),
 	mAsimovBins(0),
+	mNoSystematics(""),
 	mMassValue(""),
 	mMinimizerType(""),
-	mNoSystematics(""),
 	mResultFileName()
 {
 }
