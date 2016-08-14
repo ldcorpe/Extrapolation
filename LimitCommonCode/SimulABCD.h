@@ -74,6 +74,23 @@ inline std::vector<double> ABCD_as_vector_CalRToLJ(const ABCD &events)
 	return n;
 }
 
+// Rescale the number of events so that regionA is the rescaleTo value. If the rescale number
+// is 0.0, then just leave them.
+inline ABCD rescale_events_in_regionA(const ABCD &events, double rescaleTo) {
+	if (rescaleTo <= 0.0)
+		return events;
+
+	auto result = events;
+	auto factor = rescaleTo / events.A;
+
+	result.A *= factor;
+	result.B *= factor;
+	result.C *= factor;
+	result.D *= factor;
+
+	return result;
+}
+
 // Calculate the limit, and fill in all the results, and return it.
 // Note that the conversion between LJ and CalR world is done here!
 inline limit_result do_abcd_limit(const ABCD &data, const signal_lifetime &expected_signal, const abcd_limit_config &config)
@@ -81,24 +98,32 @@ inline limit_result do_abcd_limit(const ABCD &data, const signal_lifetime &expec
 	std::vector<double> dummy(4);
 	fill(dummy.begin(), dummy.end(), 0.0);
 
-	auto limit = simultaneousABCD(ABCD_as_vector_CalRToLJ(data), ABCD_as_vector_CalRToLJ(expected_signal.signalEvents),
+	auto rescaled_expected_signal = expected_signal;
+	rescaled_expected_signal.signalEvents = rescale_events_in_regionA(expected_signal.signalEvents, config.rescaleSignalTo);
+
+	auto limit = simultaneousABCD(ABCD_as_vector_CalRToLJ(data), ABCD_as_vector_CalRToLJ(rescaled_expected_signal.signalEvents),
 		dummy, dummy,
 		"limit_calc.root",
 		false, false,
 		data.A == 0,
 		config.useToys ? 0 : 2);
 
-	std::cout << "Limit. data: " << data << "  expected signal: " << expected_signal << std::endl;
+	std::cout << "Limit. data: " << data << "  expected signal: " << rescaled_expected_signal << std::endl;
 	std::cout << "  -> " << limit << std::endl;
 
+	auto mu_scale = expected_signal.signalEvents.A / rescaled_expected_signal.signalEvents.A;
+
 	limit_result r;
-	r.cl_p1sigma = limit.sigma_plus_1;
-	r.cl_p2sigma = limit.sigma_plus_2;
-	r.cl_n1sigma = limit.sigma_minus_1;
-	r.cl_n2sigma = limit.sigma_minus_2;
-	r.cl_95 = limit.median;
+	r.cl_p1sigma = limit.sigma_plus_1 * mu_scale;
+	r.cl_p2sigma = limit.sigma_plus_2 * mu_scale;
+	r.cl_n1sigma = limit.sigma_minus_1 * mu_scale;
+	r.cl_n2sigma = limit.sigma_minus_2 * mu_scale;
+	r.cl_95 = limit.median * mu_scale;
 	r.signal = expected_signal;
 	r.observed_data = data;
+
+	std::cout << "Limit rescaled: " << r << std::endl;
+
 	return r;
 }
 #endif

@@ -23,7 +23,6 @@ struct config {
 
 	ABCD observed_data;
 	abcd_limit_config limit_settings;
-
 };
 config parse_command_line(int argc, char **argv);
 
@@ -72,9 +71,10 @@ config parse_command_line(int argc, char **argv)
 		// Output options
 		Arg("OutputFile", "f", "Name of output root file for limit results. By default based on input filename", Arg::Is::Optional),
 
-		// Options
+		// How is the limit set?
 		Flag("UseAsym", "a", "Do asymtotic fit rather than using toys (toys are slow!)", Arg::Is::Optional),
 		Flag("ExtrapAtEachLifetime", "l", "Refit limit at each lifetime point to take into account differing efficiencies at A, B, C and D", Arg::Is::Optional),
+		Arg("RescaleSignal", "r", "Rescale the expected signal in region A to this number during limit setting", Arg::Is::Optional),
 	});
 
 	// Make sure we got all the command line arguments we need
@@ -102,6 +102,9 @@ config parse_command_line(int argc, char **argv)
 	result.limit_settings.fileName = args.IsSet("OutputFile")
 		? args.Get("OutputFile")
 		: string("limit_result_") + baseFilename;
+	result.limit_settings.rescaleSignalTo = args.IsSet("RescaleSignal")
+		? args.GetAsFloat("RescaleSignal")
+		: 0.0;
 
 	return result;
 }

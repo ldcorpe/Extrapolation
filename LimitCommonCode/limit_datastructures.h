@@ -27,6 +27,7 @@ struct abcd_limit_config {
 	bool useToys; // True if we should run toys, otherwise run asym fit.
 	bool scaleLimitByEfficiency; // True if we should run limit once, and rescale result. False we re-run limit at each lifetime point.
 	std::string fileName; // Output filename for this
+	double rescaleSignalTo; // How to rescale region A during the limit setting
 };
 
 // Result (and input parameters) from a limit.
@@ -51,6 +52,15 @@ inline std::ostream &operator<< (std::ostream &s, const ABCD &v)
 inline std::ostream &operator<< (std::ostream &s, const signal_lifetime &v)
 {
 	s << "(ctau=" << v.lifetime << ", events=" << v.signalEvents << ")";
+	return s;
+}
+
+inline std::ostream &operator<< (std::ostream &s, const limit_result &r)
+{
+	s << "Obs: " << r.observed_data << " sig: " << r.signal
+		<< " 95%: " << r.cl_95 << " 1s+" << r.cl_p1sigma << "-" << r.cl_n1sigma
+		<< " 2s+" << r.cl_p2sigma << "-" << r.cl_n2sigma;
+
 	return s;
 }
 
