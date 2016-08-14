@@ -271,9 +271,9 @@ HypoTestInvTool::LimitResults simultaneousABCD(const Double_t n[4], const Double
 		std::cout << "ERROR: 0 signal events in signal region (A)!!! --> Check inputs!  s[0] = " << ns_A << std::endl;
 		throw runtime_error("No signal events found in signal region!");
 	}
-	Double_t ns_B = s[1] / ns_A;
-	Double_t ns_C = s[2] / ns_A;
-	Double_t ns_D = s[3] / ns_A;
+	Double_t ns_B = s[1];
+	Double_t ns_C = s[2];
+	Double_t ns_D = s[3];
 	// data
 	Double_t nd_A = n[0];
 	Double_t nd_B = n[1];
