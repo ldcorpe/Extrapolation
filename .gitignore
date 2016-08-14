@@ -256,3 +256,6 @@ FindLimit/brasilianFlag.*
 ExtrapLimitFinder/brasilianFlag.*
 *.png
 /Wild/CommandLine.h
+*.o
+/ExtrapLimitFinder/run
+/ExtrapLimitFinder/ExtrapLimitFinder

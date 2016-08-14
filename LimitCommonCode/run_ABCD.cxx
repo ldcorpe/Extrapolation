@@ -317,7 +317,7 @@ HypoTestInvTool::LimitResults simultaneousABCD(const Double_t n[4], const Double
 
 	std::cout << "Signal ratios B/A C/A and D/A: " << sr_B << " / " << sr_C << " / " << sr_D << std::endl;
 	std::cout << "Guess mu: " << mu_guess << std::endl;
-	std::cout << "              " << std::endl;
+	std::cout << std::endl;
 
 	Double_t nq_A_guess = nd_A_expected; // starting guess from ABCD events in signal region (from ABCD ansatz + other BG)
 	if (useB) nq_A_guess -= nb_A;

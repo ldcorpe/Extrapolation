@@ -19,7 +19,7 @@ GLIBS		= $(ROOTGLIBS)
 
 OBJS		= main.o limitSetting.o run_ABCD.o HypoTestInvTool.o
 
-run:	$(OBJS)
+ExtrapLimitFinder:	$(OBJS)
 	$(CXX) -o $@ $(OBJS) $(CXXFLAGS) $(LIBS)
 
 main.o : main.cxx $(COMMONLIM)/extrap_file_wrapper.h $(COMMONLIM)/limitSetting.h
