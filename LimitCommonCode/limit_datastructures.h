@@ -28,6 +28,7 @@ struct abcd_limit_config {
 	bool scaleLimitByEfficiency; // True if we should run limit once, and rescale result. False we re-run limit at each lifetime point.
 	std::string fileName; // Output filename for this
 	double rescaleSignalTo; // How to rescale region A during the limit setting
+	int nToys; // How many toys to run if using the toy method
 };
 
 // Result (and input parameters) from a limit.
