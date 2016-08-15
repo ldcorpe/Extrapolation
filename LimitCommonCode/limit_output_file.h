@@ -28,8 +28,8 @@ public:
 		_h_95 = new TH1D(cl_name.c_str(), cl_name.c_str(), binning.nbin(), binning.bin_list());
 		_h_p1sigma = new TH1D((sigma_prefix + "_p1").c_str(), (sigma_prefix + "_p1").c_str(), binning.nbin(), binning.bin_list());
 		_h_p2sigma = new TH1D((sigma_prefix + "_p2").c_str(), (sigma_prefix + "_p2").c_str(), binning.nbin(), binning.bin_list());
-		_h_n1sigma = new TH1D((sigma_prefix + "_p3").c_str(), (sigma_prefix + "_p3").c_str(), binning.nbin(), binning.bin_list());
-		_h_n2sigma = new TH1D((sigma_prefix + "_p4").c_str(), (sigma_prefix + "_p4").c_str(), binning.nbin(), binning.bin_list());
+		_h_n1sigma = new TH1D((sigma_prefix + "_n1").c_str(), (sigma_prefix + "_n1").c_str(), binning.nbin(), binning.bin_list());
+		_h_n2sigma = new TH1D((sigma_prefix + "_n2").c_str(), (sigma_prefix + "_n2").c_str(), binning.nbin(), binning.bin_list());
 	}
 
 	void operator() (const std::vector<limit_result> &results) {
