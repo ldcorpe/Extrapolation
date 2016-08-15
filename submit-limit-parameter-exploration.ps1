@@ -2,9 +2,9 @@
 # Submit a series of limit explorations
 #
 
-$ntoys = (2500, 5000, 10000)
-$rescale = (100, 200, 300, 400, 500, 600, 700, 800)
-$useAsym = "true"
+$ntoys = (5000)
+$rescale = (600, 700, 800)
+$useAsym = "false"
 
 $templateJobId = 33
 
