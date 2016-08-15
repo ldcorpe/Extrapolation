@@ -15,6 +15,8 @@
 #include "Lxy_weight_calculator.h"
 #include "beta_cache.h"
 
+#include "Wild/CommandLine.h"
+
 #include "TApplication.h"
 #pragma warning (push)
 #pragma warning (disable: 4244)
@@ -37,6 +39,7 @@
 #include <memory>
 
 using namespace std;
+using namespace Wild::CommandLine;
 
 // Some config constants
 
@@ -45,11 +48,18 @@ size_t n_tau_loops = 20;
 // For the study for the number of loops, see the logbook. But this will affect if the extrap
 // at each lifetime stablieses, so change it with care.
 
+enum BetaShapeType
+{
+	FromMC,		// Uses the MC input files to derive the MC beta shape in each region
+	Unity		// Uses 1.0 as the beta shape, effectively removing the reweighting
+};
+
 // Helper methods
 struct extrapolate_config {
 	string _muon_tree_root_file;
 	string _output_filename;
 	double _tau_gen;
+	BetaShapeType _beta_type;
 };
 extrapolate_config parse_command_line(int argc, char **argv);
 variable_binning_builder PopulateTauTable();
@@ -58,6 +68,7 @@ template<class T> vector<unique_ptr<T>> DivideShape(
 	const pair<vector<unique_ptr<T>>, unique_ptr<T>> &r,
 	const string &name, const string &title);
 vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const vector<unique_ptr<TH2F>> &weightHist, bool eventCountOnly = false);
+vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const Lxy_weight_calculator &weights, bool eventCountOnly = false);
 std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError &den);
 void SetAsymError(unique_ptr<TGraphAsymmErrors> &g, int bin, double tau, double bvalue, const pair<double, double> &assErrors);
 
@@ -126,7 +137,9 @@ int main(int argc, char**argv)
 			}
 
 			// The the number of events that passed for this lifetime.
-			auto passedEventsAtTau = CalcPassedEvents(reader, h_Nratio, false);
+			auto passedEventsAtTau = config._beta_type == BetaShapeType::FromMC
+				? CalcPassedEvents(reader, h_Nratio, false)
+				: CalcPassedEvents(reader, lxy_weight, false);
 
 			// Calculate proper asymmetric errors and save the extrapolation result for the change in efficency.
 			for (int i_region = 0; i_region < 4; i_region++) {
@@ -185,20 +198,33 @@ int main(int argc, char**argv)
 // Parse the command line.
 extrapolate_config parse_command_line(int argc, char **argv)
 {
-	if (argc != 4) {
-		cout << "Usage: extrapolate_betaw <muonTree-file> <output-filename> <generated-ctau>" << endl;
-		cout << endl;
-		cout << "    <muonTree-file>           TFile containing the muonTree root file generated from a particular MC sample." << endl;
-		cout << "    <output-filename>		   ROOT filename for output" << endl;
-		cout << "    <generated-ctau>          The lifetime (in meters) where the sample was generated." << endl;
+	// Setup the command line arguments
+	Args args({
+		// Files that drive this proces
+		Arg("muonTreeFile", "m", "The input MC file containing LLP and pass/fail info", Arg::Ordinality::Required),
+		Arg("output", "f", "Output file to write results out", Arg::Ordinality::Required),
 
-		throw runtime_error("Wrong number of arguments");
+		// CTau that is required
+		Arg("ctau", "c", "The ctau that the MC file was generated at", Arg::Ordinality::Required),
+
+		// Options
+		Flag("UseFlatBeta", "b", "Use a flat beta weighting (only use Lxy)", Arg::Is::Optional),
+	});
+
+	// Make sure we got all the command line arguments we need
+	if (argc == 1 || !args.Parse(argc, argv)) {
+		cout << args.Usage("PlotSingleLimit") << endl;
+		throw runtime_error("Bad command line arguments - exiting");
 	}
 
+	// Extract the info.
+
 	extrapolate_config r;
-	r._muon_tree_root_file = argv[1];
-	r._output_filename = argv[2];
-	r._tau_gen = atof(argv[3]);
+	r._muon_tree_root_file = args.Get("muonTreeFile");
+	r._output_filename = args.Get("output");
+	r._tau_gen = args.GetAsFloat("ctau");
+	r._beta_type = args.IsSet("UseFlatBeta") ? BetaShapeType::Unity : BetaShapeType::FromMC;
+
 	return r;
 }
 
@@ -223,6 +249,12 @@ variable_binning_builder PopulateBetaBinning()
 	variable_binning_builder beta_binning(0.0);
 	beta_binning.bin_up_to(0.8, 0.2);
 	beta_binning.bin_up_to(1.0, 0.05);
+	return beta_binning;
+}
+variable_binning_builder PopulateBetaBinningForUnity()
+{
+	variable_binning_builder beta_binning(0.0);
+	beta_binning.bin_up_to(1.0, 1.0);
 	return beta_binning;
 }
 
@@ -273,7 +305,9 @@ pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, in
 	ostringstream dname, nname;
 	dname << "tau_" << tau << "_den";
 	nname << "tau_" << tau << "_num";
-	auto beta_binning(PopulateBetaBinning());
+
+	auto beta_binning = PopulateBetaBinning();
+
 	unique_ptr<TH2F> den(make_unique<TH2F>(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
 	vector<unique_ptr<TH2F>> num;
 	for (int i_region = 0; i_region < 4; i_region++) {
@@ -301,7 +335,6 @@ pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, in
 			}
 		}
 	});
-
 	return make_pair(move(num), move(den));
 }
 

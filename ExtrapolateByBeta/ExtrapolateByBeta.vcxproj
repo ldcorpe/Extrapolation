@@ -37,6 +37,7 @@
   <ImportGroup Label="Shared">
     <Import Project="..\packages\ROOT.534.36.13\build\native\ROOT.targets" Condition="Exists('..\packages\ROOT.534.36.13\build\native\ROOT.targets')" />
     <Import Project="..\CommonLimitUtils\CommonLimitUtils.vcxitems" Label="Shared" />
+    <Import Project="..\packages\WildCommandLine.1.0.2.0\build\native\WildCommandLine.targets" Condition="Exists('..\packages\WildCommandLine.1.0.2.0\build\native\WildCommandLine.targets')" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -103,5 +104,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\ROOT.534.36.13\build\native\ROOT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ROOT.534.36.13\build\native\ROOT.props'))" />
     <Error Condition="!Exists('..\packages\ROOT.534.36.13\build\native\ROOT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ROOT.534.36.13\build\native\ROOT.targets'))" />
+    <Error Condition="!Exists('..\packages\WildCommandLine.1.0.2.0\build\native\WildCommandLine.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WildCommandLine.1.0.2.0\build\native\WildCommandLine.targets'))" />
   </Target>
 </Project>
