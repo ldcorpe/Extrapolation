@@ -23,6 +23,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExtrapLimitFinder", "Extrap
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CommonLimitUtils", "CommonLimitUtils\CommonLimitUtils.vcxitems", "{838A141A-DECF-44FB-B930-95608F806E43}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BA706726-41C2-4857-8EDD-2941E057E105}"
+	ProjectSection(SolutionItems) = preProject
+		generate-complete-limit.ps1 = generate-complete-limit.ps1
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		LimitCommonCode\LimitCommonCode.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
