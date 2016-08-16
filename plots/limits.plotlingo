@@ -5,12 +5,11 @@
 include ("common.plotlingo");
 
 # Load in the limit plots
-scale = 100.0;
-expected = f_limit_600pi150lt5m.Get("xsec_BR_95CL").tag("expected") * scale;
-expected_p1s = f_limit_600pi150lt5m.Get("xsec_BR_events__p1").tag("expected_1sp") * scale;
-expected_p2s = f_limit_600pi150lt5m.Get("xsec_BR_events__p2").tag("expected_2sp") * scale;
-expected_n1s = f_limit_600pi150lt5m.Get("xsec_BR_events__n1").tag("expected_1sn") * scale;
-expected_n2s = f_limit_600pi150lt5m.Get("xsec_BR_events__n2").tag("expected_2sn") * scale;
+expected = f_limit_600pi150lt5m.Get("xsec_BR_95CL").tag("expected");
+expected_p1s = f_limit_600pi150lt5m.Get("xsec_BR_events__p1").tag("expected_1sp");
+expected_p2s = f_limit_600pi150lt5m.Get("xsec_BR_events__p2").tag("expected_2sp");
+expected_n1s = f_limit_600pi150lt5m.Get("xsec_BR_events__n1").tag("expected_1sn");
+expected_n2s = f_limit_600pi150lt5m.Get("xsec_BR_events__n2").tag("expected_2sn");
 
 Legend("expected_1s" => {Title => "expected #pm 1#sigma", Color => 3});
 Legend("expected_2s" => {Title => "expected #pm 2#sigma", Color => 5});
@@ -19,9 +18,11 @@ Legend("expected" => {Title => "expected", Color => 1});
 # Build the brazillian flag paves for +-1 and +-2 sigma
 expected.SetLineWidth(2);
 expected.SetFillColor(0);
-sigma_1 = pave (expected, expected_p1s, expected_n1s).tag("expected_1s");
+
+sigma_options = {xmin => 0.01};
+sigma_1 = pave (expected, expected_p1s, expected_n1s, sigma_options).tag("expected_1s");
 sigma_1.SetFillColor(3);
-sigma_2 = pave (expected, expected_p2s, expected_n2s).tag("expected_2s");
+sigma_2 = pave (expected, expected_p2s, expected_n2s, sigma_options).tag("expected_2s");
 sigma_2.SetFillColor(5);
 
 [sigma_2, sigma_1, expected].draw()
