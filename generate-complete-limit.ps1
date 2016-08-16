@@ -85,7 +85,7 @@ function findLimitExtrap($jobid)
 		$p = $templateJob.Parameters
 		$p["JobID"] = $jobid.ToString()
 		$p["Dataset"] = $ds
-		Write-Output $p
+		Invoke-JenkinsJob -JobUri $mcRunLimitExtrap -ParameterValues $p
 		return "Limit Extrapolation job for $ds submitted."
 	}
 	if ($jobMatch.Status -ne "SUCCESS") {
