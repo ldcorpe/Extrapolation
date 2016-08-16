@@ -259,3 +259,4 @@ ExtrapLimitFinder/brasilianFlag.*
 *.o
 /ExtrapLimitFinder/run
 /ExtrapLimitFinder/ExtrapLimitFinder
+*.pdf
