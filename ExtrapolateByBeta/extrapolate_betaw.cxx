@@ -68,7 +68,6 @@ template<class T> vector<unique_ptr<T>> DivideShape(
 	const pair<vector<unique_ptr<T>>, unique_ptr<T>> &r,
 	const string &name, const string &title);
 vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const vector<unique_ptr<TH2F>> &weightHist, bool eventCountOnly = false);
-vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const Lxy_weight_calculator &weights, bool eventCountOnly = false);
 std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError &den);
 void SetAsymError(unique_ptr<TGraphAsymmErrors> &g, int bin, double tau, double bvalue, const pair<double, double> &assErrors);
 
@@ -137,9 +136,7 @@ int main(int argc, char**argv)
 			}
 
 			// The the number of events that passed for this lifetime.
-			auto passedEventsAtTau = config._beta_type == BetaShapeType::FromMC
-				? CalcPassedEvents(reader, h_Nratio, false)
-				: CalcPassedEvents(reader, lxy_weight, false);
+			auto passedEventsAtTau = CalcPassedEvents(reader, h_Nratio, false);
 
 			// Calculate proper asymmetric errors and save the extrapolation result for the change in efficency.
 			for (int i_region = 0; i_region < 4; i_region++) {
