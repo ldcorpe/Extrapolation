@@ -168,6 +168,7 @@ HypoTestInvTool::AnalyzeResult(HypoTestInverterResult * r,
 	results.sigma_minus_1 = r->GetExpectedUpperLimit(-1);
 	results.sigma_plus_2 = r->GetExpectedUpperLimit(2);
 	results.sigma_minus_2 = r->GetExpectedUpperLimit(-2);
+	results.upper_limit = upperLimit;
 
 	// compute expected limit
 	std::cout << "Expected upper limits, using the B (alternate) model : " << std::endl;

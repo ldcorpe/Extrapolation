@@ -122,6 +122,7 @@ inline limit_result do_abcd_limit(const ABCD &data, const signal_lifetime &expec
 	r.cl_n1sigma = limit.sigma_minus_1 * mu_scale;
 	r.cl_n2sigma = limit.sigma_minus_2 * mu_scale;
 	r.cl_95 = limit.median * mu_scale;
+	r.cl_limit = limit.upper_limit * mu_scale;
 	r.signal = expected_signal;
 	r.observed_data = data;
 

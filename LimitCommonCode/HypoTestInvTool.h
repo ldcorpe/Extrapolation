@@ -26,7 +26,7 @@ public:
 
 
 	struct LimitResults {
-		double median, sigma_plus_1, sigma_minus_1, sigma_plus_2, sigma_minus_2;
+		double median, sigma_plus_1, sigma_minus_1, sigma_plus_2, sigma_minus_2, upper_limit;
 	};
 
 	LimitResults

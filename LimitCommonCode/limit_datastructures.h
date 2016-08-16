@@ -35,11 +35,16 @@ struct abcd_limit_config {
 struct limit_result {
 	ABCD observed_data;
 	signal_lifetime signal;
+	// Expected limit numbers.
+	// TODO: Rename to something more clear.
 	double cl_95;
 	double cl_p1sigma;
 	double cl_p2sigma;
 	double cl_n1sigma;
 	double cl_n2sigma;
+
+	// Actual limit.
+	double cl_limit;
 };
 
 // Some output operators to make debugging/dumping a little easier.
@@ -59,6 +64,7 @@ inline std::ostream &operator<< (std::ostream &s, const signal_lifetime &v)
 inline std::ostream &operator<< (std::ostream &s, const limit_result &r)
 {
 	s << "Obs: " << r.observed_data << " sig: " << r.signal
+		<< " limit: " << r.cl_limit
 		<< " 95%: " << r.cl_95 << " 1s+" << r.cl_p1sigma << "-" << r.cl_n1sigma
 		<< " 2s+" << r.cl_p2sigma << "-" << r.cl_n2sigma;
 

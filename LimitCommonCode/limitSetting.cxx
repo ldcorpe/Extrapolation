@@ -85,6 +85,7 @@ limit_result rescale_limit_by_efficiency(const limit_result &original,
 	result.cl_p2sigma *= original.signal.signalEvents.A / result.signal.signalEvents.A;
 	result.cl_n1sigma *= original.signal.signalEvents.A / result.signal.signalEvents.A;
 	result.cl_n2sigma *= original.signal.signalEvents.A / result.signal.signalEvents.A;
+	result.cl_limit *= original.signal.signalEvents.A / result.signal.signalEvents.A;
 
 	return result;
 }
