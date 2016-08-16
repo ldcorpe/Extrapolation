@@ -6,6 +6,9 @@
 f_lifetime = jenkins ("http://jenks-higgs.phys.washington.edu:8080/view/LLP/job/Limit-LifetimeEfficiencies/14/artifact/lifetime_eff_600pi150lt5m.root");
 f_lifetime_compare = jenkins ("http://jenks-higgs.phys.washington.edu:8080/view/LLP/job/Limit-LifetimeEfficiencies/13/artifact/lifetime_eff_600pi150lt5m.root");
 
+# Limit plot input jobs
+f_limit_600pi150lt5m = jenkins("http://jenks-higgs.phys.washington.edu:8080/view/LLP/job/Limit-RunLimitExtrapolation/71/artifact/limit_600pi150lt5m.root");
+
 Legend("RegionA" => {Color => 1, Title => "A"});
 Legend("RegionB" => {Color => 2, Title => "B"});
 Legend("RegionC" => {Color => 3, Title => "C"});
