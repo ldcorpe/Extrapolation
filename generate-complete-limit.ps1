@@ -94,6 +94,7 @@ function findLimitExtrap($jobid)
 	$r = @{}
 	$r["Dataset"] = $ds
 	$r["Id"] = $jobMatch.Id
+	$r["EffJobId"] = $jobid
 	return $r
 }
 
@@ -103,9 +104,11 @@ function generatePlotLingoSnippit ()
 	Begin {
 		$ds = $_.Dataset
 		$jobid = $_.Id
+		$effJobId = $_.EffJobId
 
 		# First, the line that will open the file.
 		Write-Output "f_limit_$ds = jenkins(""http://jenks-higgs.phys.washington.edu:8080/view/LLP/job/Limit-RunLimitExtrapolation/$jobid/artifact/limit_$ds.root"");"
+		Write-Output "f_eff_$ds = jenkins(""http://jenks-higgs.phys.washington.edu:8080/view/LLP/job/Limit-LifetimeEfficiencies/$effJobId/artifact/lifetime_eff_$ds.root"");"
 
 		# Add it to the list of datasets
 		Write-Output "ds_list = ds_list + [""$ds""];"
