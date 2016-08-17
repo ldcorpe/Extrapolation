@@ -97,6 +97,24 @@ function findLimitExtrap($jobid)
 	return $r
 }
 
+# Given the results from the final file, generate everything plot lingo needs to drive it.
+function generatePlotLingoSnippit ()
+{
+	Begin {
+		$ds = $_.Dataset
+		$jobid = $_.Id
+
+		# First, the line that will open the file.
+		Write-Output "f_limit_$ds = jenkins(""http://jenks-higgs.phys.washington.edu:8080/view/LLP/job/Limit-RunLimitExtrapolation/$jobid/artifact/limit_$ds.root"");"
+
+		# Add it to the list of datasets
+		Write-Output "ds_list = ds_list + [""$ds""];"
+	}
+}
+
 # Run it all as a pipe-line.
-$joblist = $artifacts | % {findMCEff($_)} | % {findLimitExtrap($_)}
+$joblist = $artifacts `
+	| % {findMCEff($_)}  `
+	| % {findLimitExtrap($_)} `
+	| % {generatePlotLingoSnippit}
 Write-Output $joblist

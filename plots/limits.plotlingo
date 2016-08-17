@@ -3,38 +3,101 @@
 #
 
 include ("common.plotlingo");
-plotformats = ["png", "pdf"];
+#plotformats = ["png", "pdf"];
 
-# Load in the limit plots
-expected = f_limit_600pi150lt5m.Get("xsec_BR_95CL").tag("expected");
-limit = f_limit_600pi150lt5m.Get("xsec_BR_events__limit").tag("limit");
-expected_p1s = f_limit_600pi150lt5m.Get("xsec_BR_events__p1").tag("expected_1s");
-expected_p2s = f_limit_600pi150lt5m.Get("xsec_BR_events__p2").tag("expected_2s");
-expected_n1s = f_limit_600pi150lt5m.Get("xsec_BR_events__n1").tag("expected_1s");
-expected_n2s = f_limit_600pi150lt5m.Get("xsec_BR_events__n2").tag("expected_2s");
-
+# Legend for the limit plots
 Legend("expected_1s" => {Title => "expected #pm 1#sigma", Color => 3});
 Legend("expected_2s" => {Title => "expected #pm 2#sigma", Color => 5});
 Legend("expected" => {Title => "expected limit", Color => 1, LineWidth=>2, LineStyle => 2});
 Legend("limit" => {Title => "observed limit", Color => 1, LineWidth=>2, LineStyle => 1});
 
-# Build the brazillian flag paves for +-1 and +-2 sigma
-sigma_options = {xmin => 0.01};
-sigma_1 = pave (expected, expected_p1s, expected_n1s, sigma_options).tag("expected_1s");
-sigma_1.SetFillColor(3);
-sigma_2 = pave (expected, expected_p2s, expected_n2s, sigma_options).tag("expected_2s");
-sigma_2.SetFillColor(5);
+# Metadata for each dataset so we can do the proper lookup
+metadata = {
+	"1000pi400lt5m" => {
+		m => "1000", pi => "400",
+		place => "UpperRight", xm => 0.15, ym => 0.1, xtext => 0.483, ytext =>  0.574,
+		sigma_xmin => 0.01
+	},
+	"200pi50lt5m" => {
+		m => "200", pi => "50",
+		place => "UpperRight", xm => 0.15, ym => 0.1, xtext => 0.483, ytext =>  0.574,
+		sigma_xmin => 0.01
+	},
+	"200pi25lt5m" => {
+		m => "200", pi => "25",
+		place => "LowerLeft", xm => 0.15, ym => 0.2, xtext => 0.15, ytext =>  0.15,
+		sigma_xmin => 0.01
+	},
+	"200pi8lt5m" => {
+		m => "200", pi => "8",
+		place => "UpperRight", xm => 0.15, ym => 0.1, xtext => 0.483, ytext =>  0.574,
+		sigma_xmin => 0.01
+	},
+	"400pi100lt5m" => {
+		m => "400", pi => "100",
+		place => "UpperRight", xm => 0.1, ym => 0.1, xtext => 0.533, ytext =>  0.574,
+		sigma_xmin => 0.05
+	},
+	"400pi50lt5m" => {
+		m => "400", pi => "50",
+		place => "UpperRight", xm => 0.07, ym => 0.1, xtext => 0.563, ytext =>  0.574,
+		sigma_xmin => 0.01
+	},
+	"600pi150lt5m" => {
+		m => "600", pi => "150",
+		place => "UpperRight", xm => 0.1, ym => 0.1, xtext => 0.533, ytext =>  0.574,
+		sigma_xmin => 0.01
+	},
+	"600pi50lt5m" => {
+		m => "600", pi => "50",
+		place => "UpperRight", xm => 0.2, ym => 0.1, xtext => 0.433, ytext =>  0.574,
+		sigma_xmin => 0.01
+	}
+};
 
-[sigma_2, sigma_1, expected, limit].draw()
-	.addDrawOption("C4")
-	.xaxis("s proper decay length [m]")
-	.yaxis("95% CL Upper Limit on #sigma #times BR [pb]")
-	.LegendOptions({placement => "LowerLeft", drawbox => "false", xmarg => 0.15, ymarg => 0.2, scale => 0.6})
-	.Text("m_{\phi} = 600 GeV, m_{s} = 150 GeV", {scale => 0.6, x => 0.157, y=> 0.17})
-	.Text("3.2 fb^{-I}", {x => 0.157, y => 0.4, scale => 0.5})
-	.Text("\sqrt{13} TeV", {x => 0.157, y => 0.36, scale => 0.5})
-	.title("")
-	.maximum(5000.0)
-	.size(2400,1600)
-	.filename("limit_600pi150lt5m")
-	.logy().logx();
+# Loop over each dataset
+for(ds_name, ds_list) {
+	eval("ds = f_limit_{ds_name};");
+	meta = metadata[ds_name];
+	mass = meta["m"];
+	pi = meta["pi"];
+	place = meta["place"];
+	xm = meta["xm"];
+	ym = meta["ym"];
+	xtext = meta["xtext"];
+	ytext = meta["ytext"];
+	sigma_xmin = meta["sigma_xmin"];
+
+	# Load the data itself
+	expected = ds.Get("xsec_BR_95CL").tag("expected");
+	limit = ds.Get("xsec_BR_events__limit").tag("limit");
+	expected_p1s = ds.Get("xsec_BR_events__p1").tag("expected_1s");
+	expected_p2s = ds.Get("xsec_BR_events__p2").tag("expected_2s");
+	expected_n1s = ds.Get("xsec_BR_events__n1").tag("expected_1s");
+	expected_n2s = ds.Get("xsec_BR_events__n2").tag("expected_2s");
+
+	# Build the brazillian flag paves for +-1 and +-2 sigma
+	# Only do it down to so-short a proper lifetime as the sensitivity in
+	# this analysis cuts off.
+	sigma_options = {xmin => sigma_xmin};
+	sigma_1 = pave (expected, expected_p1s, expected_n1s, sigma_options).tag("expected_1s");
+	sigma_1.SetFillColor(3);
+	sigma_2 = pave (expected, expected_p2s, expected_n2s, sigma_options).tag("expected_2s");
+	sigma_2.SetFillColor(5);
+
+	[sigma_2, sigma_1, expected, limit].draw()
+		.addDrawOption("C4")
+		.xaxis("s proper decay length [m]")
+		.yaxis("95% CL Upper Limit on #sigma #times BR [pb]")
+		.LegendOptions({placement => place, drawbox => "false", xmarg => xm, ymarg => ym, scale => 0.6})
+		.Text("m_{\phi} = {mass} GeV, m_{s} = {pi} GeV", {scale => 0.6, x => xtext + 0.007, y=> ytext + 0.02})
+		.Text("3.2 fb^{-I}", {x => xtext + 0.007, y => ytext + 0.24, scale => 0.5})
+		.Text("\sqrt{13} TeV", {x => xtext + 0.007, y => ytext + 0.20, scale => 0.5})
+		.title("")
+		.maximum(5000.0)
+		.size(2400,1600)
+		.filename("limit_{ds_name}")
+		.logy().logx();
+};
+
+
