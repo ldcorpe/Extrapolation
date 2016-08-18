@@ -44,7 +44,11 @@ using namespace Wild::CommandLine;
 // Some config constants
 
 // How many loops in tau should we do?
+#ifdef TEST_RUN
+size_t n_tau_loops = 10;
+#else
 size_t n_tau_loops = 50;
+#endif
 // For the study for the number of loops, see the logbook. But this will affect if the extrap
 // at each lifetime stablieses, so change it with care.
 
@@ -118,13 +122,16 @@ int main(int argc, char**argv)
 			g_res_eff[i_region]->SetTitle(title_g.str().c_str());
 		}
 
+		vector<vector<unique_ptr<TH2F> > > ctau_cache;
 		// Loop over proper lifetime
 		for (unsigned int i_tau = 0; i_tau < tau_binning.nbin(); i_tau++) {
 			auto tau = h_res_eff[0]->GetBinCenter(i_tau+1); // Recal ROOT indicies bins at 1
 
 			// Get the full Beta shape
 			auto rtau = GetFullBetaShape(tau, n_tau_loops, reader, lxy_weight);
-			auto h_caut_ratio = DivideShape(rtau, "h_caut_ratio", "h_caut_ratio");
+			ostringstream ctau_ratio_name;
+			ctau_ratio_name << "h_ctau_ratio_" << tau << "_";
+			auto h_caut_ratio = DivideShape(rtau, ctau_ratio_name.str(), ctau_ratio_name.str());
 
 			// Now, create a weighting histogram. This is just the differece between the numerators at the
 			// extrapolated ctau and at the generated ctau
@@ -133,6 +140,10 @@ int main(int argc, char**argv)
 				auto h = unique_ptr<TH2F>(static_cast<TH2F*>(h_caut_ratio[i_region]->Clone()));
 				h->Divide(h_gen_ratio[i_region].get());
 				h_Nratio.push_back(move(h));
+			}
+
+			if (i_tau % 10 == 0) {
+				ctau_cache.push_back(move(h_caut_ratio));
 			}
 
 			// The the number of events that passed for this lifetime.
@@ -163,11 +174,18 @@ int main(int argc, char**argv)
 			output_file->Add(lxy_weight.clone_weight(i).release());
 		}
 
-		// The default as-generated beta shape
+		// The default as-generated beta shape, along with a few check-points.
 		for (int i = 0; i < 4; i++) {
 			auto h = static_cast<TH2F*>(h_gen_ratio[i]->Clone());
 			h->SetDirectory(nullptr);
 			output_file->Add(h);
+		}
+		for (const auto &ctaus : ctau_cache) {
+			for (int i = 0; i < 4; i++) {
+				auto h = static_cast<TH2F*>(ctaus[i]->Clone());
+				h->SetDirectory(nullptr);
+				output_file->Add(h);
+			}
 		}
 
 		// Save basic information for the generated sample.
