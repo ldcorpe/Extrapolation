@@ -43,11 +43,19 @@ using namespace Wild::CommandLine;
 
 // Some config constants
 
-// How many loops in tau should we do?
+// How many loops in tau should we do? This is a bit dynamic
 #ifdef TEST_RUN
-size_t n_tau_loops = 10;
+double n_tau_loops_at_gen = 10;
+size_t tau_loops(double ctau) {
+	return 10;
+}
 #else
-size_t n_tau_loops = 50;
+double n_tau_loops_at_gen = 500;
+size_t tau_loops(double ctau) {
+	if (ctau > 1.0)
+		return 100;
+	return 20;
+}
 #endif
 // For the study for the number of loops, see the logbook. But this will affect if the extrap
 // at each lifetime stablieses, so change it with care.
@@ -97,7 +105,7 @@ int main(int argc, char**argv)
 		// How often, for the generated sample, a pair of beta1, beta2 vpions reaches the HCal.
 		// This is done at generation lifetime, so this will be the baseline which we scale against
 		// in the tau loop below.
-		auto r = GetFullBetaShape(config._tau_gen, n_tau_loops, reader, lxy_weight);
+		auto r = GetFullBetaShape(config._tau_gen, n_tau_loops_at_gen, reader, lxy_weight);
 		auto h_gen_ratio = DivideShape(r, "h_Ngen_ratio", "Fraction of events in beta space at raw generated ctau");
 		auto passedEventsAtGen = CalcPassedEvents(reader, vector<unique_ptr<TH2F>> (), false);
 		auto totalEventsAtGen = CalcPassedEvents(reader, vector<unique_ptr<TH2F>>(), true);
@@ -128,7 +136,7 @@ int main(int argc, char**argv)
 			auto tau = h_res_eff[0]->GetBinCenter(i_tau+1); // Recal ROOT indicies bins at 1
 
 			// Get the full Beta shape
-			auto rtau = GetFullBetaShape(tau, n_tau_loops, reader, lxy_weight);
+			auto rtau = GetFullBetaShape(tau, tau_loops(tau), reader, lxy_weight);
 			ostringstream ctau_ratio_name;
 			ctau_ratio_name << "h_ctau_ratio_" << tau << "_";
 			auto h_caut_ratio = DivideShape(rtau, ctau_ratio_name.str(), ctau_ratio_name.str());
