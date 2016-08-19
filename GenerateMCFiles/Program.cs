@@ -23,10 +23,10 @@ namespace GenerateMCFiles
             [Value(1, MetaName = "Datasets", Required = true, HelpText = "List of dataset names that we should process")]
             public IEnumerable<string> Datasets { get; set; }
 
-            [Option(Default = "DiVertAnalysis", Required = false, HelpText = "Job name we should fetch for the datasets")]
+            [Option("JobName", Default = "DiVertAnalysis", Required = false, HelpText = "Job name we should fetch for the datasets")]
             public string JobName { get; set; }
 
-            [Option(Default = 8, Required =false, HelpText = "Job version number.")]
+            [Option("JobVersion", Default = 8, Required =false, HelpText = "Job version number.")]
             public int JobVersion { get; set; }
 
         }
