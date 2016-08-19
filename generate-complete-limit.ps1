@@ -3,7 +3,7 @@
 #
 
 # Base everything on this set of MC files
-$mcFilesJobID = 30
+$mcFilesJobID = 31
 
 # When we run a limit extrapolation, we need a template job. This is the id of the template job which we will
 # base all our runs off of.
@@ -102,6 +102,10 @@ function findLimitExtrap($jobid)
 function generatePlotLingoSnippit ()
 {
 	Begin {
+		if ($_ -is [string]) {
+			return $_
+		}
+
 		$ds = $_.Dataset
 		$jobid = $_.Id
 		$effJobId = $_.EffJobId
