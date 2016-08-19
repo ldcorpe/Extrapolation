@@ -22,13 +22,22 @@ namespace GenerateMCFiles
         {
             [Value(1, MetaName = "Datasets", Required = true, HelpText = "List of dataset names that we should process")]
             public IEnumerable<string> Datasets { get; set; }
+
+            [Option(Default = "DiVertAnalysis", Required = false, HelpText = "Job name we should fetch for the datasets")]
+            public string JobName { get; set; }
+
+            [Option(Default = 8, Required =false, HelpText = "Job version number.")]
+            public int JobVersion { get; set; }
+
         }
         static void Main(string[] args)
         {
             // Parse the command parameters
             var opt = CommandLineUtils.ParseOptions<Options>(args);
 
-            libDataAccess.Files.JobVersionNumber = 8;
+            libDataAccess.Files.JobVersionNumber = opt.JobVersion;
+            libDataAccess.Files.JobName = opt.JobName;
+
             // Next, for each dataset, write out the files.
             foreach (var ds in opt.Datasets)
             {
