@@ -28,8 +28,8 @@ namespace GenerateMCFiles
 
             [Option("JobVersion", Default = 8, Required =false, HelpText = "Job version number.")]
             public int JobVersion { get; set; }
-
         }
+
         static void Main(string[] args)
         {
             // Parse the command parameters

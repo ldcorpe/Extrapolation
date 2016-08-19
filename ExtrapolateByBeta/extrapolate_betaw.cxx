@@ -54,7 +54,7 @@ double n_tau_loops_at_gen = 500;
 size_t tau_loops(double ctau) {
 	if (ctau > 1.0)
 		return 100;
-	return 20;
+	return 30;
 }
 #endif
 // For the study for the number of loops, see the logbook. But this will affect if the extrap

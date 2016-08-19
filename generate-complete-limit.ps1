@@ -3,7 +3,7 @@
 #
 
 # Base everything on this set of MC files
-$mcFilesJobID = 26
+$mcFilesJobID = 30
 
 # When we run a limit extrapolation, we need a template job. This is the id of the template job which we will
 # base all our runs off of.
@@ -46,14 +46,14 @@ function findMCEff ($dataset)
 	# If we have no job, then submit it.
 	if (!$jobMatch) {
 		$p = @{}
-		$p["Dataset"] = $dataset
+		$p["Dataset"] = $dataset.ToString()
 		$p["JobID"] = "$mcFilesJobID"
 		$info = $mcInfo | where {$_."Nick Name" -eq $dataset}
 		if (!$info) {
 			throw "MC Dataset with nickname $a is not in the master csv file - can't figure out its lifetime!"
 		}
 		$pl = $info."Proper Lifetime [m]".ToString()
-		$p["ProperLifetime"] = $pl
+		$p["ProperLifetime"] = $pl.ToString()
 		Invoke-JenkinsJob -JobUri $mcEfficienciesJobUri -ParameterValues $p
 		return "$dataset eff projection was submitted"
 	} else {
