@@ -69,7 +69,7 @@ namespace GenerateMCFiles
                                  llp2_phi = llp2.phi,
                                  llp2_pt = llp2.pT,
                                  llp2_Lxy = llp2.Lxy,
-                                 event_weight = Abs(evt.Data.eventWeight * evt.Data.pileupEventWeight),
+                                 event_weight = evt.Data.eventWeight * Abs(evt.Data.pileupEventWeight),
                                  // TODO: get from Emma how to do this correctly (once we figure it out!!)
                                  RegionA = passedTrigger && isSelected && region == 1,
                                  RegionB = passedTrigger && isSelected && region == 2,
