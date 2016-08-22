@@ -7,29 +7,35 @@ include ("common.plotlingo");
 include ("dataset_list_extrap_check.plotlingo");
 
 # All the different sample pairs
-sample_pair = ["200pi50lt9mW", "200pi50lt5mW"];
+s200 = ["200pi50lt9mW", "200pi50lt5mW"];
+s1000 = ["1000pi400lt9mW", "1000pi400lt5mW"];
+sample_pairs = [
+	s200, s1000
+];
 
-name = "";
+for (sample_pair, sample_pairs) {
+	name = "";
 
-plots = map(pname, sample_pair) {
-	eval("plot = f_eff_{pname};");
-	info = sample_metadata[pname];
-	mass = info["m"];
-	pi = info["pi"];
-	lt = info["lt"];
-	c = info["Color"];
-	name = name + pname;
-	p = plot.Get("h_res_eff_A").tag(pname);
-	Legend("{pname}" => {Title=> "m_{\phi} = {mass} GeV, m_{s} = {pi} GeV ctau = {lt} m", Color=> c});
-	p;
+	plots = map(pname, sample_pair) {
+		eval("plot = f_eff_{pname};");
+		info = sample_metadata[pname];
+		mass = info["m"];
+		pi = info["pi"];
+		lt = info["lt"];
+		c = info["Color"];
+		name = name + pname;
+		p = plot.Get("h_res_eff_A").tag(pname);
+		Legend("{pname}" => {Title=> "m_{\phi} = {mass} GeV, m_{s} = {pi} GeV ctau = {lt} m", Color=> c});
+		p;
+	};
+
+	plots
+		.plot()
+		.drawingOptionAfter(1, "HIST")
+		.xaxis("s proper decay length [m]")
+		.yaxis("Global Efficiency")
+		.LegendOptions({scale => 0.8})
+		.title("")
+		.filename(name)
+		;
 };
-
-plots
-	.plot()
-	.drawingOptionAfter(1, "HIST")
-	.xaxis("s proper decay length [m]")
-	.yaxis("Global Efficiency")
-	.LegendOptions({scale => 0.8})
-	.title("")
-	.filename(name)
-	;
