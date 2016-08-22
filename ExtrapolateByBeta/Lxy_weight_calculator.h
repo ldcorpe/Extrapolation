@@ -31,6 +31,6 @@ public:
 	}
 
 private:
-	std::unique_ptr<TH2D> _pass_weight[4];
+	std::unique_ptr<TH1D> _pass_weight[4];
 };
 
