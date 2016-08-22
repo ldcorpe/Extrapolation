@@ -8,7 +8,7 @@ include ("dataset_list_extrap_check.plotlingo");
 NormalizePlots();
 
 # Samles we will look at.
-samples = ["200pi50", "1000pi400"];
+samples = ["200pi50", "1000pi400", "600pi50"];
 
 s200 = ["200pi50lt9mW", "200pi50lt5mW"];
 

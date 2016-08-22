@@ -3,7 +3,7 @@
 #
 
 # Base everything on this set of MC files
-$mcFilesJobID = 34 #37
+$mcFilesJobID = 37
 
 # When we run a limit extrapolation, we need a template job. This is the id of the template job which we will
 # base all our runs off of.

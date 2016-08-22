@@ -73,6 +73,16 @@ sample_metadata = {
 		lt => 5,
 		Color => 7
 	},
+	"600pi50lt5mW" => {
+		m => "600", pi => "50",
+		lt => 5,
+		Color => 1
+	},
+	"600pi50lt9mW" => {
+		m => "600", pi => "50",
+		lt => 9,
+		Color => 7
+	},
 	"600pi50lt5m" => {
 		m => "600", pi => "50",
 		lt => 5,
