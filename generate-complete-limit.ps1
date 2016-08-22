@@ -3,7 +3,7 @@
 #
 
 # Base everything on this set of MC files
-$mcFilesJobID = 34
+$mcFilesJobID = 34 #37
 
 # When we run a limit extrapolation, we need a template job. This is the id of the template job which we will
 # base all our runs off of.
@@ -53,7 +53,7 @@ function findMCEff ($dataset)
 			throw "MC Dataset with nickname $a is not in the master csv file - can't figure out its lifetime!"
 		}
 		$pl = $info."Proper Lifetime [m]".ToString()
-		$p["ProperLifetime"] = $pl.ToString()
+		$p["ProperLifetime"] = $pl
 		Invoke-JenkinsJob -JobUri $mcEfficienciesJobUri -ParameterValues $p
 		return "$dataset eff projection was submitted"
 	} else {
@@ -98,10 +98,18 @@ function findLimitExtrap($jobid)
 	return $r
 }
 
+# Pull the event counts from a line like "EventInfo (weighted): 200pi50lt9mW 188988.0 34.0 6.0 5.0 0.0"
+function Get-EventCount ($line)
+{
+	$m = $line -match " (\w+) ([\.0-9]+) ([\.0-9]+) ([\.0-9]+) ([\.0-9]+) ([\.0-9]+)$"
+	$p = @{"ds" = $Matches[1]; "total" = $Matches[2]; "A" = $Matches[3] };
+	return $p
+}
+
 # Given the results from the final file, generate everything plot lingo needs to drive it.
 function generatePlotLingoSnippit ()
 {
-	Begin {
+	Process {
 		if ($_ -is [string]) {
 			return $_
 		}
@@ -117,11 +125,20 @@ function generatePlotLingoSnippit ()
 		# Add it to the list of datasets
 		Write-Output "ds_list = ds_list + [""$ds""];"
 	}
+	End {
+	
+		# Grab the raw numbers of events from the input jobs
+		$log = Get-JenkinsBuildLogfile -JobUri $mcFilesJobUri -JobId $mcFilesJobID
+		$unweighted = $log | where {$_ -match "EventInfo:"}
+		$weighted = $log | where {$_ -match "EventInfo \("}
+		$unweighted | % {Get-EventCount $_} | % { Write-Output "evt_$($_.ds)_tot = $($_.total);"; Write-Output "evt_$($_.ds)_A = $($_.A);"; $ds = $_.ds; $info = $mcInfo | where {$_."Nick Name" -eq $ds}; $pl = $info."Proper Lifetime [m]".ToString(); Write-Output "ctau_$($_.ds) = $pl;"}
+		$weighted | % {Get-EventCount $_} | % { Write-Output "evtw_$($_.ds)_tot = $($_.total);"; Write-Output "evtw_$($_.ds)_A = $($_.A);"; $ds = $_.ds; $info = $mcInfo | where {$_."Nick Name" -eq $ds}; $pl = $info."Proper Lifetime [m]".ToString(); Write-Output "ctau_$($_.ds) = $pl;" }
+	}
 }
 
 # Run it all as a pipe-line.
 $joblist = $artifacts `
 	| % {findMCEff($_)}  `
 	| % {findLimitExtrap($_)} `
-	| % {generatePlotLingoSnippit}
+	| generatePlotLingoSnippit
 Write-Output $joblist
