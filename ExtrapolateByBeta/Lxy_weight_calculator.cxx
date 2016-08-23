@@ -90,6 +90,12 @@ Lxy_weight_calculator2D::Lxy_weight_calculator2D(const muon_tree_processor &read
 		}
 	});
 
+	// Smooth everything
+	passedA->Smooth();
+	passedB->Smooth();
+	passedC->Smooth();
+	passedD->Smooth();
+
 	// The key is the ratio.
 	// We can't use ROOT sumw2 errors because they assume independent histograms. So we use
 	// binomial errors (the "B" option).
