@@ -45,9 +45,9 @@ using namespace Wild::CommandLine;
 
 // How many loops in tau should we do? This is a bit dynamic
 #ifdef TEST_RUN
-double n_tau_loops_at_gen = 10;
+double n_tau_loops_at_gen = 500;
 size_t tau_loops(double ctau) {
-	return 10;
+	return 200;
 }
 #else
 double n_tau_loops_at_gen = 500;
@@ -63,7 +63,7 @@ size_t tau_loops(double ctau) {
 enum BetaShapeType
 {
 	FromMC,		// Uses the MC input files to derive the MC beta shape in each region
-	Unity		// Uses 1.0 as the beta shape, effectively removing the reweighting
+	Unity		// Does weighting by only Lxy
 };
 
 // Helper methods
@@ -80,6 +80,7 @@ template<class T> vector<unique_ptr<T>> DivideShape(
 	const pair<vector<unique_ptr<T>>, unique_ptr<T>> &r,
 	const string &name, const string &title);
 vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const vector<unique_ptr<TH2F>> &weightHist, bool eventCountOnly = false);
+vector<doubleError> CalcPassedEventsLxy(const muon_tree_processor &reader, double lifetime, Lxy_weight_calculator &lxyWeight);
 std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError &den);
 void SetAsymError(unique_ptr<TGraphAsymmErrors> &g, int bin, double tau, double bvalue, const pair<double, double> &assErrors);
 
@@ -100,15 +101,7 @@ int main(int argc, char**argv)
 
 		// Create the muon tree reader object and calculate the lxy weighting histogram
 		muon_tree_processor reader (config._muon_tree_root_file);
-		Lxy_weight_calculator lxy_weight(reader);
-
-		// How often, for the generated sample, a pair of beta1, beta2 vpions reaches the HCal.
-		// This is done at generation lifetime, so this will be the baseline which we scale against
-		// in the tau loop below.
-		auto r = GetFullBetaShape(config._tau_gen, n_tau_loops_at_gen, reader, lxy_weight);
-		auto h_gen_ratio = DivideShape(r, "h_Ngen_ratio", "Fraction of events in beta space at raw generated ctau");
-		auto passedEventsAtGen = CalcPassedEvents(reader, vector<unique_ptr<TH2F>> (), false);
-		auto totalEventsAtGen = CalcPassedEvents(reader, vector<unique_ptr<TH2F>>(), true);
+		Lxy_weight_calculator2D lxy_weight(reader);
 
 		// Create the histograms we will use to store the raw results.
 		auto tau_binning = PopulateTauTable();
@@ -130,32 +123,52 @@ int main(int argc, char**argv)
 			g_res_eff[i_region]->SetTitle(title_g.str().c_str());
 		}
 
-		vector<vector<unique_ptr<TH2F> > > ctau_cache;
+		// How often, for the generated sample, a pair of beta1, beta2 vpions reaches the HCal.
+		// This is done at generation lifetime, so this will be the baseline which we scale against
+		// in the tau loop below.
+		vector<unique_ptr<TH2F>> h_gen_ratio;
+		if (config._beta_type == BetaShapeType::FromMC) {
+			auto r = GetFullBetaShape(config._tau_gen, n_tau_loops_at_gen, reader, lxy_weight);
+			h_gen_ratio = DivideShape(r, "h_Ngen_ratio", "Fraction of events in beta space at raw generated ctau");
+		}
+
+		// Calc how many events are passing initially (raw numbers).
+		auto passedEventsAtGen = CalcPassedEvents(reader, vector<unique_ptr<TH2F>>(), false);
+		auto totalEventsAtGen = CalcPassedEvents(reader, vector<unique_ptr<TH2F>>(), true);
+
 		// Loop over proper lifetime
+		vector<vector<unique_ptr<TH2F> > > ctau_cache; // Cache of ctau beta plots to be written out later.
 		for (unsigned int i_tau = 0; i_tau < tau_binning.nbin(); i_tau++) {
 			auto tau = h_res_eff[0]->GetBinCenter(i_tau+1); // Recal ROOT indicies bins at 1
 
-			// Get the full Beta shape
-			auto rtau = GetFullBetaShape(tau, tau_loops(tau), reader, lxy_weight);
-			ostringstream ctau_ratio_name;
-			ctau_ratio_name << "h_ctau_ratio_" << tau << "_";
-			auto h_caut_ratio = DivideShape(rtau, ctau_ratio_name.str(), ctau_ratio_name.str());
+			vector<doubleError> passedEventsAtTau;
+			if (config._beta_type == BetaShapeType::FromMC) {
+				// Get the full Beta shape
+				auto rtau = GetFullBetaShape(tau, tau_loops(tau), reader, lxy_weight);
+				ostringstream ctau_ratio_name;
+				ctau_ratio_name << "h_ctau_ratio_" << tau << "_";
+				auto h_caut_ratio = DivideShape(rtau, ctau_ratio_name.str(), ctau_ratio_name.str());
 
-			// Now, create a weighting histogram. This is just the differece between the numerators at the
-			// extrapolated ctau and at the generated ctau
-			decltype(h_caut_ratio) h_Nratio;
-			for (int i_region = 0; i_region < 4; i_region++) {
-				auto h = unique_ptr<TH2F>(static_cast<TH2F*>(h_caut_ratio[i_region]->Clone()));
-				h->Divide(h_gen_ratio[i_region].get());
-				h_Nratio.push_back(move(h));
+				// Now, create a weighting histogram. This is just the differece between the numerators at the
+				// extrapolated ctau and at the generated ctau
+				decltype(h_caut_ratio) h_Nratio;
+				for (int i_region = 0; i_region < 4; i_region++) {
+					auto h = unique_ptr<TH2F>(static_cast<TH2F*>(h_caut_ratio[i_region]->Clone()));
+					h->Divide(h_gen_ratio[i_region].get());
+					h_Nratio.push_back(move(h));
+				}
+
+				if (i_tau % 10 == 0) {
+					ctau_cache.push_back(move(h_caut_ratio));
+				}
+
+				// The the number of events that passed for this lifetime.
+				passedEventsAtTau = CalcPassedEvents(reader, h_Nratio, false);
 			}
-
-			if (i_tau % 10 == 0) {
-				ctau_cache.push_back(move(h_caut_ratio));
+			else {
+				// Just do Lxy scaling
+				passedEventsAtTau = CalcPassedEventsLxy(reader, tau, lxy_weight);
 			}
-
-			// The the number of events that passed for this lifetime.
-			auto passedEventsAtTau = CalcPassedEvents(reader, h_Nratio, false);
 
 			// Calculate proper asymmetric errors and save the extrapolation result for the change in efficency.
 			for (int i_region = 0; i_region < 4; i_region++) {
@@ -183,16 +196,18 @@ int main(int argc, char**argv)
 		}
 
 		// The default as-generated beta shape, along with a few check-points.
-		for (int i = 0; i < 4; i++) {
-			auto h = static_cast<TH2F*>(h_gen_ratio[i]->Clone());
-			h->SetDirectory(nullptr);
-			output_file->Add(h);
-		}
-		for (const auto &ctaus : ctau_cache) {
+		if (config._beta_type == BetaShapeType::FromMC) {
 			for (int i = 0; i < 4; i++) {
-				auto h = static_cast<TH2F*>(ctaus[i]->Clone());
+				auto h = static_cast<TH2F*>(h_gen_ratio[i]->Clone());
 				h->SetDirectory(nullptr);
 				output_file->Add(h);
+			}
+			for (const auto &ctaus : ctau_cache) {
+				for (int i = 0; i < 4; i++) {
+					auto h = static_cast<TH2F*>(ctaus[i]->Clone());
+					h->SetDirectory(nullptr);
+					output_file->Add(h);
+				}
 			}
 		}
 
@@ -231,7 +246,7 @@ extrapolate_config parse_command_line(int argc, char **argv)
 		Arg("ctau", "c", "The ctau that the MC file was generated at", Arg::Ordinality::Required),
 
 		// Options
-		Flag("UseFlatBeta", "b", "Use a flat beta weighting (only use Lxy)", Arg::Is::Optional),
+		Flag("UseFlatBeta", "b", "Use only Lxy to do the extrapolation", Arg::Is::Optional),
 	});
 
 	// Make sure we got all the command line arguments we need
@@ -257,7 +272,8 @@ variable_binning_builder PopulateTauTable()
 {
 	variable_binning_builder r(0.0);
 #ifdef TEST_RUN
-	r.bin_up_to(1.0, 0.05);
+	r.bin_up_to(1.08, 1.08);
+	r.bin_up_to(1.10, 0.02);
 #else
 	r.bin_up_to(0.6, 0.005);
 	r.bin_up_to(4.0, 0.05);
@@ -360,6 +376,46 @@ pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, in
 		}
 	});
 	return make_pair(move(num), move(den));
+}
+
+vector<doubleError> CalcPassedEventsLxy(const muon_tree_processor &mc_entries, double tau, Lxy_weight_calculator &lxyWeight)
+{
+	// The resulting sums are just all the weights added together.
+	vector<doubleError> results(4);
+
+	size_t nloops = 100;
+
+	// Loop over each MC entry, and generate tau's at several different places
+	int count = 0;
+	mc_entries.process_all_entries([&count, &results, nloops, tau, &lxyWeight](const muon_tree_processor::eventInfo &entry) {
+#ifdef notyet
+		for (int i_region = 0; i_region < 4; i_region++) {
+			results[i_region] += lxyWeight(i_region, entry.vpi1_Lxy/1000.0, entry.vpi2_Lxy/1000.0);
+		}
+#else
+		TLorentzVector vpi1, vpi2;
+		vpi1.SetPtEtaPhiE(entry.vpi1_pt, entry.vpi1_eta, entry.vpi1_phi, entry.vpi1_E);
+		vpi2.SetPtEtaPhiE(entry.vpi2_pt, entry.vpi2_eta, entry.vpi2_phi, entry.vpi2_E);
+
+		for (Int_t maketaus = 0; maketaus < nloops; maketaus++) { // tau loop to generate toy events
+
+			Double_t beta1 = -1, beta2 = -1, L2D1 = -1, L2D2 = -1;
+
+			doSR(vpi1, vpi2, tau, beta1, beta2, L2D1, L2D2); // Do special relativity
+
+			for (int i_region = 0; i_region < 4; i_region++) {
+				results[i_region] += entry.weight * lxyWeight(i_region, L2D1, L2D2);
+			}
+		}
+#endif
+	});
+
+#ifndef notyet
+	for (int i_region = 0; i_region < 4; i_region++) {
+		results[i_region] = results[i_region] / nloops;
+	}
+#endif
+	return results;
 }
 
 // Calculate a 2D efficiency given a denominator and the numerator selected from the denominator
