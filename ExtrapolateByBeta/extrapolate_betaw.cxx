@@ -388,11 +388,11 @@ vector<doubleError> CalcPassedEventsLxy(const muon_tree_processor &mc_entries, d
 	// Loop over each MC entry, and generate tau's at several different places
 	int count = 0;
 	mc_entries.process_all_entries([&count, &results, nloops, tau, &lxyWeight](const muon_tree_processor::eventInfo &entry) {
+#ifdef notyet
 		for (int i_region = 0; i_region < 4; i_region++) {
 			results[i_region] += lxyWeight(i_region, entry.vpi1_Lxy/1000.0, entry.vpi2_Lxy/1000.0);
 		}
-
-#ifdef notyet
+#else
 		TLorentzVector vpi1, vpi2;
 		vpi1.SetPtEtaPhiE(entry.vpi1_pt, entry.vpi1_eta, entry.vpi1_phi, entry.vpi1_E);
 		vpi2.SetPtEtaPhiE(entry.vpi2_pt, entry.vpi2_eta, entry.vpi2_phi, entry.vpi2_E);
@@ -410,7 +410,7 @@ vector<doubleError> CalcPassedEventsLxy(const muon_tree_processor &mc_entries, d
 #endif
 	});
 
-#ifdef notyet
+#ifndef notyet
 	for (int i_region = 0; i_region < 4; i_region++) {
 		results[i_region] = results[i_region] / nloops;
 	}
