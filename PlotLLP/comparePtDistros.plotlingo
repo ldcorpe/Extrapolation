@@ -1,0 +1,44 @@
+﻿#
+# Make a half-way decent plot comparing the pT distributions for a Lxy region.
+# The files must be run by hand to generate the inputs:
+#
+# .\PlotLLP\bin\x86\Debug\PlotLLP.exe "C:\Users\gordo\Downloads\LLPExtrapolationMCTree-600pi50lt9mW.root"
+# .\PlotLLP\bin\x86\Debug\PlotLLP.exe "C:\Users\gordo\Downloads\LLPExtrapolationMCTree-600pi50lt5mW.root"
+#
+# Do it in the solution directory, and then this should work.
+#
+
+NormalizePlots();
+
+sample = "600pi50";
+
+f9 = file("../info-LLPExtrapolationMCTree-600pi50lt9mW.root");
+f5 = file("..\info-LLPExtrapolationMCTree-600pi50lt5mW.root");
+
+Legend("lt9" => {Title => "600-60 9m", Color => 1});
+Legend("lt5" => {Title => "600-60 5m", Color => 3});
+
+stems = [
+	{name => "pTall", title => "All Jets", what => "pt"},
+	{name => "pTregionA", title => "All Region A Jets", what => "pt"},
+	{name => "Etaall", title => "All Jets", what => "eta"},
+	{name => "pTlxy_2000_3500", title => "Lxy 2.0-3.5 m", what => "pt"},
+	{name => "pTlxy_2500_3000", title => "Lxy 2.5-3.0 m", what => "pt"},
+	{name => "Etalxy_2000_3500", title => "Lxy 2.0-3.5 m", what => "eta"},
+	{name => "Etalxy_2500_3000", title => "Lxy 2.5-3.0 m", what => "eta"},
+	{name => "pTAlxy_2000_3500", title => "Region A Lxy 2.0-3.5 m", what => "pt"},
+	{name => "pTAlxy_2500_3000", title => "Region A Lxy 2.5-3.0 m", what => "pt"}
+];
+
+for (stems) {
+	# First, look at the overall pT distributions (they are the same).
+	p9_all = (f9.Get("{name}_{what}1") + f9.Get("{name}_{what}2")).tag("lt9").normalize();
+	p5_all = (f5.Get("{name}_{what}1") + f5.Get("{name}_{what}2")).tag("lt5").normalize();
+
+	[p9_all,p5_all]
+		.plot()
+		.title("")
+		.Text("{title}")
+		.filename("{name}_{sample}");
+};
+
