@@ -90,11 +90,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="beta_cache.h" />
+    <ClInclude Include="cache_object.h" />
+    <ClInclude Include="caching_tlz.h" />
     <ClInclude Include="Lxy_weight_calculator.h" />
     <ClInclude Include="muon_tree_processor.h" />
     <ClInclude Include="variable_binning_builder.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Invoke-ExtrapolationTest.ps1" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
