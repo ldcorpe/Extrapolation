@@ -132,7 +132,7 @@ function generatePlotLingoSnippit ()
 		$unweighted = $log | where {$_ -match "EventInfo:"}
 		$weighted = $log | where {$_ -match "EventInfo \("}
 		$unweighted | % {Get-EventCount $_} | % { Write-Output "evt_$($_.ds)_tot = $($_.total);"; Write-Output "evt_$($_.ds)_A = $($_.A);"; $ds = $_.ds; $info = $mcInfo | where {$_."Nick Name" -eq $ds}; $pl = $info."Proper Lifetime [m]".ToString(); Write-Output "ctau_$($_.ds) = $pl;"}
-		$weighted | % {Get-EventCount $_} | % { Write-Output "evtw_$($_.ds)_tot = $($_.total);"; Write-Output "evtw_$($_.ds)_A = $($_.A);"; $ds = $_.ds; $info = $mcInfo | where {$_."Nick Name" -eq $ds}; $pl = $info."Proper Lifetime [m]".ToString(); Write-Output "ctau_$($_.ds) = $pl;" }
+		$weighted | % {Get-EventCount $_} | % { Write-Output "evtw_$($_.ds)_tot = $($_.total);"; Write-Output "evtw_$($_.ds)_A = $($_.A);"; $ds = $_.ds; $info = $mcInfo | where {$_."Nick Name" -eq $ds}; $pl = $info."Proper Lifetime [m]".ToString(); Write-Output "ctauw_$($_.ds) = $pl;" }
 	}
 }
 
