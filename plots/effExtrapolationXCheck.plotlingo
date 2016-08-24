@@ -10,8 +10,6 @@ NormalizePlots();
 # Samles we will look at.
 samples = ["200pi50", "1000pi400", "600pi50"];
 
-s200 = ["200pi50lt9mW", "200pi50lt5mW"];
-
 for (sample, samples) {
 	plots = map(lt, ["lt5mW", "lt9mW"]) {
 		pname = "{sample}{lt}";
@@ -22,7 +20,7 @@ for (sample, samples) {
 		lt = info["lt"];
 		c = info["Color"];
 		p = plot.Get("h_res_eff_A").tag(pname);
-		Legend("{pname}" => {Title=> "m_{\phi} = {mass} GeV, m_{s} = {pi} GeV ctau = {lt} m", Color=> c});
+		Legend("{pname}" => {Title=> "m_{#phi} = {mass} GeV, m_{s} = {pi} GeV, ctau = {lt} m", Color=> c});
 		p;
 	};
 	
@@ -38,6 +36,10 @@ for (sample, samples) {
 		;
 };
 
+Legend("point_600pi50_9" => {Title => "m_{#phi} = 600 GeV, m_{s} = 50 GeV, ctau = 9 m", Color => 46});
+Legend("point_600pi50_5" => {Title => "m_{#phi} = 600 GeV, m_{s} = 50 GeV, ctau = 5 m", Color => 39});
+
+
 # Do closure test as well as extrapolation test.
 for (sample, samples) {
 	eval ("p1f9 = f_eff_{sample}lt9mW;");
@@ -51,9 +53,9 @@ for (sample, samples) {
 	eval ("ctau9 = ctau_{sample}lt9mW;");
 	eval ("ctau5 = ctau_{sample}lt5mW;");
 	
-	p29 = ratioPointAsPlot(p19, ctau9, evA9, evtot9);
-	p25 = ratioPointAsPlot(p15, ctau5, evA5, evtot5);
-
+	p29 = ratioPointAsPlot(p19, ctau9, evA9, evtot9).tag("point_{sample}_9");
+	p25 = ratioPointAsPlot(p15, ctau5, evA5, evtot5).tag("point_{sample}_5");
+	
 	[p19, p29]
 		.plot()
 		.title("")
@@ -72,13 +74,13 @@ for (sample, samples) {
 		.LegendOptions({scale => 0.8})
 		.filename("closure_{sample}lt5mW");
 
-	[p19, p25]
+	[p19, p25, p29]
 		.plot()
 		.title("")
 		.logx()
 		.xaxis("s proper decay length [m]")
 		.yaxis("Global Efficiency")
-		.LegendOptions({scale => 0.8})
+		.LegendOptions({scale => 0.6, placement => "UpperLeft", xmarg => 0.15, ymarg => 0.1})
 		.filename("extrap_point_{sample}");
 };
 

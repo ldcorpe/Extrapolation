@@ -10,7 +10,7 @@ $mcFilesJobID = 37
 $runLimitExtrapTemplateJobID = 73
 
 # Minimum job number in the LifetimeEfficiencies and limit extrap jenkins task to search, just to keep things reasonable
-$mcEfficienciesMinJobID = 10
+$mcEfficienciesMinJobID = 72
 $runLimitExtrapMinJobID = 70
 
 #
