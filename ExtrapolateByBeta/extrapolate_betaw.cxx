@@ -311,20 +311,24 @@ variable_binning_builder PopulateBetaBinningForUnity()
 // Sample from the proper lifetime tau for a specific lifetime, and then do the special relativity
 // calculation to understand where it ended up.
 void doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double_t &beta1, Double_t &beta2, Double_t &L2D1, Double_t &L2D2) {
+// tau - is in units of meters.
 
 	beta1 = vpi1.Beta();
 	beta2 = vpi2.Beta();
 	Double_t gamma1 = vpi1.Gamma();
 	Double_t gamma2 = vpi2.Gamma();
 
-	Double_t ct1 = gRandom->Exp(tau);  //get ct of the two vpions 
+	// Get ctau of the two we are to simulate, in meters.
+	Double_t ct1 = gRandom->Exp(tau);
 	Double_t ct2 = gRandom->Exp(tau);
 
+	// What is the decay length in the lab frame (in meters)?
 	Double_t ct1prime = gamma1 * ct1;
 	Double_t ct2prime = gamma2 * ct2;
 	Double_t lxy1 = beta1 * ct1prime;  //construct Lxy of the two vpions 
 	Double_t lxy2 = beta2 * ct2prime;
 
+	// Calculate the timing in nano-seconds.
 	Double_t lighttime1 = lxy1 / 2.9979E8 * 1E9;
 	Double_t lighttime2 = lxy2 / 2.9979E8 * 1E9;
 	Double_t timing1 = ct1prime / 2.9979E8 * 1E9;
