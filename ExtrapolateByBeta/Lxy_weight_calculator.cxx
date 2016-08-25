@@ -28,7 +28,7 @@ Lxy_weight_calculator1D::Lxy_weight_calculator1D(const muon_tree_processor &read
 	passedD->Sumw2();
 
 	reader.process_all_entries([&generated, &passedA, &passedB, &passedC, &passedD](const muon_tree_processor::eventInfo &entry) {
-		generated->Fill(entry.vpi1_Lxy /1000.0, entry.weight);
+		generated->Fill(entry.vpi1_Lxy / 1000.0, entry.weight);
 		generated->Fill(entry.vpi2_Lxy / 1000.0, entry.weight);
 		if (entry.RegionA) {
 			passedA->Fill(entry.vpi1_Lxy / 1000.0, entry.weight);
