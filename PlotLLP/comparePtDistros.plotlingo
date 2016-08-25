@@ -22,6 +22,7 @@ stems = [
 	{name => "pTall", title => "All Jets", what => "pt"},
 	{name => "pTregionA", title => "All Region A Jets", what => "pt"},
 	{name => "Etaall", title => "All Jets", what => "eta"},
+	{name => "EtaregionA", title => "All Jets", what => "eta"},
 	{name => "pTlxy_2000_3500", title => "Lxy 2.0-3.5 m", what => "pt"},
 	{name => "pTlxy_2500_3000", title => "Lxy 2.5-3.0 m", what => "pt"},
 	{name => "Etalxy_2000_3500", title => "Lxy 2.0-3.5 m", what => "eta"},
