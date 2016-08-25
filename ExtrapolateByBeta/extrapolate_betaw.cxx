@@ -385,8 +385,8 @@ pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, in
 	// Loop over each MC entry, and generate tau's at several different places
 	mc_entries.process_all_entries([&den, &num, ntauloops, tau, &lxyWeight](const muon_tree_processor::eventInfo &entry) {
 		TLorentzVector vpi1_tlz, vpi2_tlz;
-		vpi1_tlz.SetPtEtaPhiE(entry.vpi1_pt/1000.0, entry.vpi1_eta, entry.vpi1_phi, entry.vpi1_E/1000.0);
-		vpi2_tlz.SetPtEtaPhiE(entry.vpi2_pt/1000.0, entry.vpi2_eta, entry.vpi2_phi, entry.vpi2_E/1000.0);
+		vpi1_tlz.SetPtEtaPhiE(entry.vpi1_pt / 1000.0, entry.vpi1_eta, entry.vpi1_phi, entry.vpi1_E / 1000.0);
+		vpi2_tlz.SetPtEtaPhiE(entry.vpi2_pt / 1000.0, entry.vpi2_eta, entry.vpi2_phi, entry.vpi2_E / 1000.0);
 
 		auto vpi1 = caching_tlz(vpi1_tlz);
 		auto vpi2 = caching_tlz(vpi2_tlz);
