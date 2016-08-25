@@ -43,3 +43,33 @@ for (stems) {
 		.filename("{name}_{sample}");
 };
 
+effstems = [
+	{title => "pT Efficiency", namedenom => "pTall", namenum => "pTregionA", what => "pt"},
+	{title => "eta Efficiency", namedenom => "Etaall", namenum => "EtaregionA", what => "eta"},
+	{title => "Lxy 2.0-3.5 m", namedenom => "pTlxy_2000_3500", namenum => "pTAlxy_2000_3500", what => "pt"},
+	{title => "Lxy 2.0-3.5 m", namedenom => "Etalxy_2000_3500", namenum => "EtaAlxy_2000_3500", what => "eta"},
+	{title => "Lxy 2.5-3.0 m", namedenom => "pTlxy_2500_3000", namenum => "pTAlxy_2500_3000", what => "pt"},
+	{title => "Lxy 2.5-3.0 m", namedenom => "Etalxy_2500_3000", namenum => "EtaAlxy_2500_3000", what => "eta"}
+];
+
+for (effstems) {
+	# Two sets of distributions
+	rebinFactor = 2;
+	p9_num = (f9.Get("{namenum}_{what}1") + f9.Get("{namenum}_{what}2")).tag("lt9").rebin(rebinFactor);
+	p5_num = (f5.Get("{namenum}_{what}1") + f5.Get("{namenum}_{what}2")).tag("lt5").rebin(rebinFactor);
+
+	p9_denom = (f9.Get("{namedenom}_{what}1") + f9.Get("{namedenom}_{what}2")).tag("lt9").rebin(rebinFactor);
+	p5_denom = (f5.Get("{namedenom}_{what}1") + f5.Get("{namedenom}_{what}2")).tag("lt5").rebin(rebinFactor);
+
+	# Create the efficiency plots
+	p9_eff = p9_num/p9_denom;
+	p5_eff = p5_num/p5_denom;
+
+	# Plot
+	[p5_eff, p9_eff]
+		.plot()
+		.title("")
+		.Text("{title}", {x => 0.15, y => 0.8})
+		.maximum(1.0).minimum(0.0)
+		.filename("eff_{namenum}_{sample}");
+};
