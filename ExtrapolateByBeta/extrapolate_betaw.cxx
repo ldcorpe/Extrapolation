@@ -310,8 +310,8 @@ variable_binning_builder PopulateBetaBinningForUnity()
 
 // Sample from the proper lifetime tau for a specific lifetime, and then do the special relativity
 // calculation to understand where it ended up.
-void doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double_t &beta1, Double_t &beta2, Double_t &L2D1, Double_t &L2D2) {
 // tau - is in units of meters.
+bool doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double_t &beta1, Double_t &beta2, Double_t &L2D1, Double_t &L2D2) {
 
 	beta1 = vpi1.Beta();
 	beta2 = vpi2.Beta();
@@ -325,7 +325,7 @@ void doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double
 	// What is the decay length in the lab frame (in meters)?
 	Double_t ct1prime = gamma1 * ct1;
 	Double_t ct2prime = gamma2 * ct2;
-	Double_t lxy1 = beta1 * ct1prime;  //construct Lxy of the two vpions 
+	Double_t lxy1 = beta1 * ct1prime;
 	Double_t lxy2 = beta2 * ct2prime;
 
 	// Calculate the timing in nano-seconds.
@@ -346,7 +346,18 @@ void doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double
 	L2D1 = vpixyz1.Perp();
 	L2D2 = vpixyz2.Perp();
 
-	return;
+	// Timing restrictions. This first test should never fire
+	// because there is no way for the particle to go faster than "c", and
+	// that is the only way to have negative timing. But we keep it here for completness
+	// sake.
+	if (deltat1 < -3.0 || deltat2 < -3.0) {
+		return false;
+	}
+	if (deltat1 > 15.0 || deltat2 > 15.0) {
+		return false;
+	}
+
+	return true;
 }
 
 // Generate a lxy1 and lxy2 set of histograms. The denominator (first item) is
@@ -384,11 +395,12 @@ pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, in
 
 			Double_t beta1 = -1, beta2 = -1, L2D1 = -1, L2D2 = -1;
 
-			doSR(vpi1, vpi2, tau, beta1, beta2, L2D1, L2D2); // Do special relativity
-
-			den->Fill(beta1, beta2, entry.weight);
-			for (int i_region = 0; i_region < 4; i_region++) {
-				num[i_region]->Fill(beta1, beta2, entry.weight * lxyWeight(i_region, L2D1, L2D2));
+			// Do SR, apply SR related cuts (like timing).
+			if (doSR(vpi1, vpi2, tau, beta1, beta2, L2D1, L2D2)) {
+				den->Fill(beta1, beta2, entry.weight);
+				for (int i_region = 0; i_region < 4; i_region++) {
+					num[i_region]->Fill(beta1, beta2, entry.weight * lxyWeight(i_region, L2D1, L2D2));
+				}
 			}
 		}
 	});
@@ -421,10 +433,11 @@ vector<doubleError> CalcPassedEventsLxy(const muon_tree_processor &mc_entries, d
 
 			Double_t beta1 = -1, beta2 = -1, L2D1 = -1, L2D2 = -1;
 
-			doSR(vpi1, vpi2, tau, beta1, beta2, L2D1, L2D2); // Do special relativity
-
-			for (int i_region = 0; i_region < 4; i_region++) {
-				results[i_region] += entry.weight * lxyWeight(i_region, L2D1, L2D2);
+			// Do special relativity, apply cuts as needed.
+			if (doSR(vpi1, vpi2, tau, beta1, beta2, L2D1, L2D2)) {
+				for (int i_region = 0; i_region < 4; i_region++) {
+					results[i_region] += entry.weight * lxyWeight(i_region, L2D1, L2D2);
+				}
 			}
 		}
 #endif
