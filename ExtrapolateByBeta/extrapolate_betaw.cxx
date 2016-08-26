@@ -299,13 +299,10 @@ variable_binning_builder PopulateTauTable()
 	r.bin_up_to(0.8, 0.2);
 	r.bin_up_to(1.68, 0.88);
 #else
-	r.bin_up_to(0.6, 0.6);
-	r.bin_up_to(0.8, 0.2);
-	r.bin_up_to(1.68, 0.88);
-	//r.bin_up_to(0.6, 0.005);
-	//r.bin_up_to(4.0, 0.05);
-	//r.bin_up_to(10.0, 0.2);
-	//r.bin_up_to(50.0, 1.0);
+	r.bin_up_to(0.6, 0.005);
+	r.bin_up_to(4.0, 0.05);
+	r.bin_up_to(10.0, 0.2);
+	r.bin_up_to(50.0, 1.0);
 #endif
 	return r;
 }
