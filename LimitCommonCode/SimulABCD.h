@@ -7,6 +7,8 @@
 #include "TROOT.h"
 
 #include <iostream>
+#include <string>
+#include <map>
 
 /*
 Two variables x,y create 4 regions: A,B,C,D with A signal dominated region and
@@ -38,7 +40,8 @@ HypoTestInvTool::LimitResults simultaneousABCD(const Double_t n[4], const Double
 	Bool_t useC = kFALSE, // Use other background events (do subtraction of c above
 	Bool_t blindA = kTRUE, // Assume no signal, so we get expected limits
 	Int_t calcType = 0, // 0 for toys, 2 for asym fit
-	Int_t par_ntoys = 5000 // Number of toys in dataset.
+	Int_t par_ntoys = 5000, // Number of toys in dataset.
+	std::map<std::string,double> systematic_errors = std::map<std::string, double>() // Errors that are needed for the limit
 );
 
 inline HypoTestInvTool::LimitResults simultaneousABCD(const std::vector<double> &n,
@@ -50,7 +53,8 @@ inline HypoTestInvTool::LimitResults simultaneousABCD(const std::vector<double> 
 	Bool_t useC = kFALSE, // Use other background events (do subtraction of c above
 	Bool_t blindA = kTRUE, // Assume no signal, so we get expected limits
 	Int_t calcType = 0, // 0 for toys, 2 for asym fit
-	Int_t par_ntoys = 5000 // Number of toys to throw
+	Int_t par_ntoys = 5000,// Number of toys to throw
+	const std::map<std::string, double> &systematic_errors = std::map<std::string, double>()
 )
 {
 	if (n.size() != 4
@@ -61,7 +65,8 @@ inline HypoTestInvTool::LimitResults simultaneousABCD(const std::vector<double> 
 	}
 
 	return simultaneousABCD(&(n[0]), &(s[0]), &(b[0]), &(c[0]),
-		out_filename, useB, useC, blindA, calcType, par_ntoys);
+		out_filename, useB, useC, blindA, calcType, par_ntoys,
+		systematic_errors);
 }
 
 // Convert to a vector that we can pass to the simultanious fitter.
@@ -109,7 +114,8 @@ inline limit_result do_abcd_limit(const ABCD &data, const signal_lifetime &expec
 		false, false,
 		data.A == 0,
 		config.useToys ? 0 : 2,
-		config.nToys);
+		config.nToys,
+		config.systematic_errors);
 
 	std::cout << "Limit. data: " << data << "  expected signal: " << rescaled_expected_signal << std::endl;
 	std::cout << "  -> " << limit << std::endl;

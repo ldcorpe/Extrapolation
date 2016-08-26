@@ -4,6 +4,8 @@
 
 #include <vector>
 #include <ostream>
+#include <map>
+#include <string>
 
 // Number of events, signal, etc., in the ABCD regions.
 struct ABCD {
@@ -29,6 +31,7 @@ struct abcd_limit_config {
 	std::string fileName; // Output filename for this
 	double rescaleSignalTo; // How to rescale region A during the limit setting
 	int nToys; // How many toys to run if using the toy method
+	std::map<std::string, double> systematic_errors;
 };
 
 // Result (and input parameters) from a limit.

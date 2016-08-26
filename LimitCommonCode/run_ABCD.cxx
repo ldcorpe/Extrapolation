@@ -38,6 +38,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 using namespace RooStats;
 using namespace std;
@@ -238,6 +239,15 @@ void ReadResult(const char * fileName, const char * resultName = "", bool useCLs
 	StandardHypoTestInvDemo(enne, esse, fileName, resultName, "", "", "", 0, 0, useCLs);
 }
 
+// Get a value from a map of sys errors. Fail badly if it is missing.
+double get_error(const map<string, double> &table, const string &key) {
+	auto v = table.find(key);
+	if (v == table.end()) {
+		throw runtime_error("Unable to find systematic error " + key + ".");
+	}
+	return v->second;
+}
+
 /* Simultanous ABCD code  (S.giagu) */
 /*
  * n[4] = {n_A, n_B, n_C, n_D} <-- number of observed events in regions A, B, C, D
@@ -255,7 +265,8 @@ HypoTestInvTool::LimitResults simultaneousABCD(const Double_t n[4], const Double
 	Bool_t useC, // Use other background events (do subtraction of c above
 	Bool_t blindA, // Assume no signal, so we get expected limits
 	Int_t calculationType, // See comments below - 0 for toys, 2 for asym fit
-	Int_t par_ntoys // number of events in Asimov sample in case of calc type 2 or 3, number of events in each toys for type 0; default should be : 50000
+	Int_t par_ntoys, // number of events in Asimov sample in case of calc type 2 or 3, number of events in each toys for type 0; default should be : 50000
+	map<string,double> systematic_errors // The errors to be used in the fit
 )
 {
 
@@ -396,23 +407,23 @@ HypoTestInvTool::LimitResults simultaneousABCD(const Double_t n[4], const Double
 	//lumi
 	wspace->factory("alpha_lumi[1, 0, 10]");
 	wspace->factory("nom_lumi[1, 0, 10]");
-	wspace->factory("nom_sigma_lumi[0.021]");  // <--  2.1% final run2 2015
+	ostringstream lumi_error;
+	lumi_error << "nom_sigma_lumi[" << get_error (systematic_errors, "lumi") << "0.021]";
+	wspace->factory(lumi_error.str().c_str());  // <--  2.1% final run2 2015
 	wspace->factory("Gaussian::constraint_lumi(nom_lumi, alpha_lumi, nom_sigma_lumi)");
 
 	wspace->factory("alpha_S[1, 0, 2]");  //systematic nuisance on signal (efficiencies etc.) and on MC bg
 	wspace->factory("nom_S[1, 0, 10]");
-	// trigger eff: muNS 6%  3mu6: 5.8%  caloratio 11% --> weighted with efficiencies in signal MC: 7%
-	// reco eff: 20%
-	// pileup on SumPt: 5%
-	// pt resolution: 10%
-	// JES: 1%
-	// total: 24%
-	wspace->factory("nom_sigma_S[0.24]"); // 24% totale displaced LJ analysis 2016
+	ostringstream mc_events_error;
+	mc_events_error << "nom_sigma_S[" << get_error(systematic_errors, "mc_eff") << "]";
+	wspace->factory(mc_events_error.str().c_str()); // 24% totale displaced LJ analysis 2016
 	wspace->factory("Gaussian::constraint_S(nom_S, alpha_S, nom_sigma_S)");
 
 	wspace->factory("alpha_Q[1, 0, 2]");  //systematic nuisance on Multijet   
 	wspace->factory("nom_Q[1, 0, 5]");
-	wspace->factory("nom_sigma_Q[0.30]");   //30%% on QCD from ABCD variations and closure tests
+	ostringstream abcd_error;
+	abcd_error << "nom_sigma_Q[" << get_error(systematic_errors, "abcd") << "]";
+	wspace->factory(abcd_error.str().c_str());   //30%% on QCD from ABCD variations and closure tests
 	wspace->factory("Gaussian::constraint_Q(nom_Q, alpha_Q, nom_sigma_Q)");
 
 	if (useC) {

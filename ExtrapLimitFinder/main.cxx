@@ -54,6 +54,86 @@ int main(int argc, char **argv)
 	return 0;
 }
 
+// Fill in sys errors for a particular scalar mass. Bomb if we don't have them.
+void fill_sys_errors(int scalarMass, map<string, double> &errors, bool unofficial = false)
+{
+	double jes, jesemf, jer, trigger, pileup;
+	switch (scalarMass) {
+	case 400:
+		jes = 0.0329;
+		jesemf = 0.1433;
+		jer = 0.43;
+		trigger = 0.05;
+		pileup = 0.0402;
+		break;
+
+	case 600:
+		jes = 0.0148;
+		jesemf = 0.0535;
+		jer = 0.40;
+		trigger = 0.05;
+		pileup = 0.0203;
+		break;
+
+	case 1000:
+		jes = 0.0051;
+		jesemf = 0.0178;
+		jer = 0.05;
+		trigger = 0.05;
+		pileup = 0.0203;
+		break;
+
+	default:
+		if (unofficial) {
+			// Use 400 for now
+			cout << "*** -> Unknown systematic errors for scalar mass " << scalarMass << " - using 400 GeV" << endl;
+			jes = 0.0329;
+			jesemf = 0.1433;
+			jer = 0.43;
+			trigger = 0.05;
+			pileup = 0.0402;
+			break;
+		}
+		else {
+			throw runtime_error("Do not know systematic errors for the scalar mass!");
+		}
+		break;
+	}
+
+	// Store them.
+	errors["mc_jes"] = jes;
+	errors["mc_jesemf"] = jesemf;
+	errors["mc_jer"] = jer;
+	errors["mc_trigger"] = trigger;
+	errors["mc_pileup"] = pileup;
+}
+
+// Find all errors that start with some prefix, and sum them.
+double budle_errors(const string &prefix, const map<string, double> &errors)
+{
+	double err2 = 0.0;
+	for (auto const &err : errors) {
+		if (err.first.find(prefix) == 0) {
+			err2 += err.second*err.second;
+		}
+	}
+	return sqrt(err2);
+}
+
+void dump_errors(const map<string, double> &errors) {
+	cout << "**********" << endl;
+	cout << "* Systematic Errors: " << endl;
+	cout << "* " <<endl;
+
+	for (auto &err : errors) {
+		cout << "* " << err.first << " -> " << err.second << endl;
+	}
+
+	cout << "* " << endl;
+	cout << "**********" << endl;
+}
+
+
 // Parse command line arguments
 config parse_command_line(int argc, char **argv)
 {
@@ -76,6 +156,9 @@ config parse_command_line(int argc, char **argv)
 		Flag("ExtrapAtEachLifetime", "l", "Refit limit at each lifetime point to take into account differing efficiencies at A, B, C and D", Arg::Is::Optional),
 		Arg("RescaleSignal", "r", "Rescale the expected signal in region A to this number during limit setting", Arg::Is::Optional),
 		Arg("NToys", "n", "Number of toys to use when using toy method. Defaults to 5000.", Arg::Is::Optional),
+
+		// General
+		Flag("Unofficial", "u", "Turn off some protection checks so it can run even thought input isn't 'just right'"),
 	});
 
 	// Make sure we got all the command line arguments we need
@@ -110,5 +193,48 @@ config parse_command_line(int argc, char **argv)
 		? args.GetAsInt("NToys")
 		: 5000;
 
+	// Systematic Errors
+	result.limit_settings.systematic_errors["lumi"] = 0.021; // Final lumi is 2.1%
+
+	// Constant MC errors.
+	result.limit_settings.systematic_errors["mc_PDF"] = 0.02;
+	result.limit_settings.systematic_errors["mc_ISRFSR"] = 0.02;
+
+	// Constant ABCD errors
+	result.limit_settings.systematic_errors["abcd"] = 0.36;
+
+	// Next we have to determine what mass point we are looking at. This is required as the
+	// systematic errors do vary with mass.
+	int scalarMass = result.extrapolate_filename.find("100pi") != string::npos ? 100
+		: result.extrapolate_filename.find("125pi") != string::npos ? 125
+		: result.extrapolate_filename.find("200pi") != string::npos ? 200
+		: result.extrapolate_filename.find("400pi") != string::npos ? 400
+		: result.extrapolate_filename.find("600pi") != string::npos ? 600
+		: result.extrapolate_filename.find("1000pi") != string::npos ? 1000
+		: -1;
+
+	if (scalarMass <= 0.0) {
+		cout << "*******" << endl;
+		cout << "*" << endl;
+		cout << "* -> Unable to determine a scalar mass from the input file name: " << endl;
+		cout << "*     -> " << result.extrapolate_filename << endl;
+		cout << "*" << endl;
+		cout << "* Going to fail unless this is an unoffical run!" << endl;
+		cout << "*" << endl;
+		cout << "*******" << endl;
+		if (!args.IsSet("Unofficial")) {
+			throw runtime_error("Unable to determine the scalar mass from the input file " + result.extrapolate_filename);
+		}
+		cout << "**** -> Setting scalar mass to 600.0" << endl;
+		scalarMass = 600;
+	}
+
+	fill_sys_errors(scalarMass, result.limit_settings.systematic_errors);
+	result.limit_settings.systematic_errors["mc_eff"] = budle_errors("mc_", result.limit_settings.systematic_errors);
+
+	// Finally, dump them.
+	dump_errors(result.limit_settings.systematic_errors);
+
 	return result;
 }
+
