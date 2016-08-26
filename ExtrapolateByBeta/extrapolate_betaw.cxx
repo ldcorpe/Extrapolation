@@ -345,10 +345,10 @@ bool doMCPreselection(const muon_tree_processor::eventInfo &entry)
 // Sample from the proper lifetime tau for a specific lifetime, and then do the special relativity
 // calculation to understand where it ended up.
 // tau - is in units of meters.
-bool doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double_t &beta1, Double_t &beta2, Double_t &L2D1, Double_t &L2D2) {
+bool doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double_t &L2D1, Double_t &L2D2) {
 
-	beta1 = vpi1.Beta();
-	beta2 = vpi2.Beta();
+	auto beta1 = vpi1.Beta();
+	auto beta2 = vpi2.Beta();
 	Double_t gamma1 = vpi1.Gamma();
 	Double_t gamma2 = vpi2.Gamma();
 
@@ -362,14 +362,6 @@ bool doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double
 	Double_t lxy1 = beta1 * ct1prime;
 	Double_t lxy2 = beta2 * ct2prime;
 
-	// Calculate the timing in nano-seconds.
-	Double_t lighttime1 = lxy1 / 2.9979E8 * 1E9;
-	Double_t lighttime2 = lxy2 / 2.9979E8 * 1E9;
-	Double_t timing1 = ct1prime / 2.9979E8 * 1E9;
-	Double_t timing2 = ct2prime / 2.9979E8 * 1E9;
-	Double_t deltat1 = timing1 - lighttime1;
-	Double_t deltat2 = timing2 - lighttime2;
-
 	Double_t theta1 = vpi1.Theta();
 	Double_t theta2 = vpi2.Theta();
 
@@ -380,8 +372,16 @@ bool doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double
 	L2D1 = vpixyz1.Perp();
 	L2D2 = vpixyz2.Perp();
 
-	beta1 = -1.0;
-	beta2 = -1.0;
+#if TIMINGNEEDED
+	// Useing the pT plot to account for timing.
+
+	// Calculate the timing in nano-seconds.
+	Double_t lighttime1 = lxy1 / 2.9979E8 * 1E9;
+	Double_t lighttime2 = lxy2 / 2.9979E8 * 1E9;
+	Double_t timing1 = ct1prime / 2.9979E8 * 1E9;
+	Double_t timing2 = ct2prime / 2.9979E8 * 1E9;
+	Double_t deltat1 = timing1 - lighttime1;
+	Double_t deltat2 = timing2 - lighttime2;
 
 	// Timing restrictions. This first test should never fire
 	// because there is no way for the particle to go faster than "c", and
@@ -394,6 +394,7 @@ bool doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double
 		return false;
 	}
 
+#endif
 	return true;
 }
 
@@ -432,10 +433,10 @@ pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullPtShape(double tau, int 
 
 		for (Int_t maketaus = 0; maketaus < ntauloops; maketaus++) { // tau loop to generate toy events
 
-			Double_t beta1 = -1, beta2 = -1, L2D1 = -1, L2D2 = -1;
+			Double_t L2D1 = -1, L2D2 = -1;
 
 			// Do SR, apply SR related cuts (like timing).
-			if (doSR(vpi1, vpi2, tau, beta1, beta2, L2D1, L2D2)) {
+			if (doSR(vpi1, vpi2, tau, L2D1, L2D2)) {
 				den->Fill(pt1, pt2, entry.weight);
 				for (int i_region = 0; i_region < 4; i_region++) {
 					num[i_region]->Fill(pt1, pt2, entry.weight * lxyWeight(i_region, L2D1, L2D2));
@@ -470,10 +471,10 @@ vector<doubleError> CalcPassedEventsLxy(const muon_tree_processor &mc_entries, d
 
 		for (Int_t maketaus = 0; maketaus < nloops; maketaus++) { // tau loop to generate toy events
 
-			Double_t beta1 = -1, beta2 = -1, L2D1 = -1, L2D2 = -1;
+			Double_t L2D1 = -1, L2D2 = -1;
 
 			// Do special relativity, apply cuts as needed.
-			if (doSR(vpi1, vpi2, tau, beta1, beta2, L2D1, L2D2)) {
+			if (doSR(vpi1, vpi2, tau, L2D1, L2D2)) {
 				for (int i_region = 0; i_region < 4; i_region++) {
 					results[i_region] += entry.weight * lxyWeight(i_region, L2D1, L2D2);
 				}
