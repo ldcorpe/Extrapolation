@@ -13,7 +13,6 @@
 #include "muon_tree_processor.h"
 #include "variable_binning_builder.h"
 #include "Lxy_weight_calculator.h"
-#include "beta_cache.h"
 #include "caching_tlz.h"
 
 #include "Wild/CommandLine.h"
@@ -74,7 +73,7 @@ struct extrapolate_config {
 };
 extrapolate_config parse_command_line(int argc, char **argv);
 variable_binning_builder PopulateTauTable();
-pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntauloops, const muon_tree_processor &mc_entries, const Lxy_weight_calculator &lxyWeight);
+pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullPtShape(double tau, int ntauloops, const muon_tree_processor &mc_entries, const Lxy_weight_calculator &lxyWeight);
 template<class T> vector<unique_ptr<T>> DivideShape(
 	const pair<vector<unique_ptr<T>>, unique_ptr<T>> &r,
 	const string &name, const string &title);
@@ -102,7 +101,7 @@ int main(int argc, char**argv)
 		cout << "TTree input: " << config._muon_tree_root_file << endl;
 		cout << "Output file: " << config._output_filename << endl;
 		cout << "Generated lifetime: " << config._tau_gen << endl;
-		cout << "We are using beta-based extrapolation: " << (config._beta_type == BetaShapeType::FromMC ? "yes" : "no") << endl;
+		cout << "We are using pt-based extrapolation: " << (config._beta_type == BetaShapeType::FromMC ? "yes" : "no") << endl;
 
 		// Create the muon tree reader object.
 		muon_tree_processor reader (config._muon_tree_root_file);
@@ -132,13 +131,13 @@ int main(int argc, char**argv)
 			g_res_eff[i_region]->SetTitle(title_g.str().c_str());
 		}
 
-		// How often, for the generated sample, a pair of beta1, beta2 vpions reaches the HCal.
+		// How often, for the generated sample, a pair of pt1, pt2 vpions reaches the HCal.
 		// This is done at generation lifetime, so this will be the baseline which we scale against
 		// in the tau loop below.
 		vector<unique_ptr<TH2F>> h_gen_ratio;
 		if (config._beta_type == BetaShapeType::FromMC) {
-			auto r = GetFullBetaShape(config._tau_gen, n_tau_loops_at_gen, reader, lxy_weight);
-			h_gen_ratio = DivideShape(r, "h_Ngen_ratio", "Fraction of events in beta space at raw generated ctau");
+			auto r = GetFullPtShape(config._tau_gen, n_tau_loops_at_gen, reader, lxy_weight);
+			h_gen_ratio = DivideShape(r, "h_Ngen_ratio", "Fraction of events in pT space at raw generated ctau");
 		}
 
 		// And how many events actually are in the signal regions at generation?
@@ -161,14 +160,14 @@ int main(int argc, char**argv)
 		}
 
 		// Loop over proper lifetime
-		vector<vector<unique_ptr<TH2F> > > ctau_cache; // Cache of ctau beta plots to be written out later.
+		vector<vector<unique_ptr<TH2F> > > ctau_cache; // Cache of ctau pt plots to be written out later.
 		for (unsigned int i_tau = 0; i_tau < tau_binning.nbin(); i_tau++) {
 			auto tau = h_res_eff[0]->GetBinCenter(i_tau+1); // Recal ROOT indicies bins at 1
 
 			vector<doubleError> passedEventsAtTau;
 			if (config._beta_type == BetaShapeType::FromMC) {
-				// Get the full Beta shape
-				auto rtau = GetFullBetaShape(tau, tau_loops(tau), reader, lxy_weight);
+				// Get the full pT shape
+				auto rtau = GetFullPtShape(tau, tau_loops(tau), reader, lxy_weight);
 				ostringstream ctau_ratio_name;
 				ctau_ratio_name << "h_ctau_ratio_" << tau << "_";
 				auto h_caut_ratio = DivideShape(rtau, ctau_ratio_name.str(), ctau_ratio_name.str());
@@ -219,7 +218,7 @@ int main(int argc, char**argv)
 			output_file->Add(lxy_weight.clone_weight(i).release());
 		}
 
-		// The default as-generated beta shape, along with a few check-points.
+		// The default as-generated pT shape, along with a few check-points.
 		if (config._beta_type == BetaShapeType::FromMC) {
 			for (int i = 0; i < 4; i++) {
 				auto h = static_cast<TH2F*>(h_gen_ratio[i]->Clone());
@@ -311,24 +310,19 @@ variable_binning_builder PopulateTauTable()
 	return r;
 }
 
-// Binning we will use for beta histograms
-variable_binning_builder PopulateBetaBinning()
+// Binning we will use for pT histograms
+variable_binning_builder PopulatePTBinning()
 {
-	variable_binning_builder beta_binning(0.0);
-	beta_binning.bin_up_to(0.8, 0.2);
-	beta_binning.bin_up_to(0.95, 0.05);
-	beta_binning.bin_up_to(1.0, 0.005);
-	return beta_binning;
+	variable_binning_builder pt_binning(0.0);
+	pt_binning.bin_up_to(100, 10.0);
+	pt_binning.bin_up_to(300, 10.0);
+	pt_binning.bin_up_to(500, 50);
+	pt_binning.bin_up_to(800, 100);
+	return pt_binning;
 
 	// for 50 GeV scalar, at 300 GeV, beta = 0.986
 	// for 50 GeV scalar, at 200 GeV, beta = 0.968
 	// for 50 GeV scalar, at 100 GeV, beta = 0.866
-}
-variable_binning_builder PopulateBetaBinningForUnity()
-{
-	variable_binning_builder beta_binning(0.0);
-	beta_binning.bin_up_to(1.0, 1.0);
-	return beta_binning;
 }
 
 // Window out events that will never contribute to the lifetime no matter what ctau they are
@@ -386,9 +380,8 @@ bool doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double
 	L2D1 = vpixyz1.Perp();
 	L2D2 = vpixyz2.Perp();
 
-	// Replace beta with the transverse beta
-	beta1 = vpi1.BetaTransverse();
-	beta2 = vpi2.BetaTransverse();
+	beta1 = -1.0;
+	beta2 = -1.0;
 
 	// Timing restrictions. This first test should never fire
 	// because there is no way for the particle to go faster than "c", and
@@ -407,7 +400,7 @@ bool doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double
 // Generate a lxy1 and lxy2 set of histograms. The denominator (first item) is
 // the generated ones. The numerator is modified by the acceptance histogram
 // built from the input file.
-pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, int ntauloops, const muon_tree_processor &mc_entries, const Lxy_weight_calculator &lxyWeight)
+pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullPtShape(double tau, int ntauloops, const muon_tree_processor &mc_entries, const Lxy_weight_calculator &lxyWeight)
 {
 	// Create numerator and denominator histograms.
 	// To avoid annoying ROOT error messages, make a unique name for each.
@@ -415,13 +408,13 @@ pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, in
 	dname << "tau_" << tau << "_den";
 	nname << "tau_" << tau << "_num";
 
-	auto beta_binning = PopulateBetaBinning();
+	auto pt_binning = PopulatePTBinning();
 
-	unique_ptr<TH2F> den(make_unique<TH2F>(dname.str().c_str(), dname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
+	unique_ptr<TH2F> den(make_unique<TH2F>(dname.str().c_str(), dname.str().c_str(), pt_binning.nbin(), pt_binning.bin_list(), pt_binning.nbin(), pt_binning.bin_list()));
 	vector<unique_ptr<TH2F>> num;
 	for (int i_region = 0; i_region < 4; i_region++) {
 		nname << "A";
-		num.push_back(make_unique<TH2F>(nname.str().c_str(), nname.str().c_str(), beta_binning.nbin(), beta_binning.bin_list(), beta_binning.nbin(), beta_binning.bin_list()));
+		num.push_back(make_unique<TH2F>(nname.str().c_str(), nname.str().c_str(), pt_binning.nbin(), pt_binning.bin_list(), pt_binning.nbin(), pt_binning.bin_list()));
 		num[i_region]->Sumw2();
 	}
 	den->Sumw2();
@@ -429,8 +422,10 @@ pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, in
 	// Loop over each MC entry, and generate tau's at several different places
 	mc_entries.process_all_entries([&den, &num, ntauloops, tau, &lxyWeight](const muon_tree_processor::eventInfo &entry) {
 		TLorentzVector vpi1_tlz, vpi2_tlz;
-		vpi1_tlz.SetPtEtaPhiE(entry.vpi1_pt / 1000.0, entry.vpi1_eta, entry.vpi1_phi, entry.vpi1_E / 1000.0);
-		vpi2_tlz.SetPtEtaPhiE(entry.vpi2_pt / 1000.0, entry.vpi2_eta, entry.vpi2_phi, entry.vpi2_E / 1000.0);
+		auto pt1 = entry.vpi1_pt / 1000.0;
+		auto pt2 = entry.vpi2_pt / 1000.0;
+		vpi1_tlz.SetPtEtaPhiE(pt1, entry.vpi1_eta, entry.vpi1_phi, entry.vpi1_E / 1000.0);
+		vpi2_tlz.SetPtEtaPhiE(pt2, entry.vpi2_eta, entry.vpi2_phi, entry.vpi2_E / 1000.0);
 
 		auto vpi1 = caching_tlz(vpi1_tlz);
 		auto vpi2 = caching_tlz(vpi2_tlz);
@@ -441,9 +436,9 @@ pair<vector<unique_ptr<TH2F>>, unique_ptr<TH2F>> GetFullBetaShape(double tau, in
 
 			// Do SR, apply SR related cuts (like timing).
 			if (doSR(vpi1, vpi2, tau, beta1, beta2, L2D1, L2D2)) {
-				den->Fill(beta1, beta2, entry.weight);
+				den->Fill(pt1, pt2, entry.weight);
 				for (int i_region = 0; i_region < 4; i_region++) {
-					num[i_region]->Fill(beta1, beta2, entry.weight * lxyWeight(i_region, L2D1, L2D2));
+					num[i_region]->Fill(pt1, pt2, entry.weight * lxyWeight(i_region, L2D1, L2D2));
 				}
 			}
 		}
@@ -504,7 +499,7 @@ vector<unique_ptr<T>> DivideShape(const pair<vector<unique_ptr<T>>, unique_ptr<T
 	for (auto &info : r.first) {
 		unique_ptr<T> ratio(static_cast<T*>(info->Clone()));
 		ratio->Divide(info.get(), r.second.get(), 1.0, 1.0, "B");
-		ratio->SetNameTitle((name + region).c_str(), (title + " " + region + "; Beta; Beta").c_str());
+		ratio->SetNameTitle((name + region).c_str(), (title + " " + region + "; pT [GeV]; pT [GeV]").c_str());
 		result.push_back(move(ratio));
 		region++;
 	}
@@ -526,9 +521,8 @@ vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const ve
 			// TODO: is this the right way to do an error here? Does it propagate so do we care?
 			doubleError weight(entry.weight, entry.weight);
 
-			beta_cache b(entry);
 			if (weightHist.size() > 0) {
-				int nbin = weightHist[i_region]->FindBin(b.beta1(), b.beta2());
+				int nbin = weightHist[i_region]->FindBin(entry.vpi1_pt / 1000.0, entry.vpi2_pt / 1000.0);
 				weight *= doubleError(weightHist[i_region]->GetBinContent(nbin), weightHist[i_region]->GetBinError(nbin));
 			}
 
