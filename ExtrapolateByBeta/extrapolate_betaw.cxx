@@ -339,10 +339,13 @@ bool doMCPreselection(const muon_tree_processor::eventInfo &entry)
 	// These cuts derived by looking at eff for signalA region.
 	// https://1drv.ms/u/s!AnlM9ZYrD4WgtXmIm59h9tbdK9WG?wd=target%282015%20Analysis%2FAnalysis%20Topics.one%7C2291C3ED-E8E5-49AA-9C56-882D0513A351%2FClosure%20Test%7CBCD03136-03E7-442E-8CC5-92CFCBA29830%2F%29
 
-	return abs(entry.vpi1_eta) <= 3.0
-		&& abs(entry.vpi2_eta) <= 3.0
-		&& entry.vpi1_pt / 1000.0 > 0.0
-		&& entry.vpi2_pt / 1000.0 > 0.0;
+	const double ptCut = 0.0;
+	const double etaCut = 3.0;
+
+	return abs(entry.vpi1_eta) <= etaCut
+		&& abs(entry.vpi2_eta) <= etaCut
+		&& entry.vpi1_pt / 1000.0 > ptCut
+		&& entry.vpi2_pt / 1000.0 > ptCut;
 }
 
 // Sample from the proper lifetime tau for a specific lifetime, and then do the special relativity
@@ -382,6 +385,10 @@ bool doSR(const caching_tlz &vpi1, const caching_tlz &vpi2, Double_t tau, Double
 
 	L2D1 = vpixyz1.Perp();
 	L2D2 = vpixyz2.Perp();
+
+	// Replace beta with the transverse beta
+	beta1 = vpi1.BetaTransverse();
+	beta2 = vpi2.BetaTransverse();
 
 	// Timing restrictions. This first test should never fire
 	// because there is no way for the particle to go faster than "c", and

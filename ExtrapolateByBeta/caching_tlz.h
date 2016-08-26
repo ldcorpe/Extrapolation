@@ -12,7 +12,8 @@ public:
 		: _beta(make_cache_func<double>([&v]() {return v.Beta(); })),
 		_gamma(make_cache_func<double>([&v]() {return v.Gamma(); })),
 		_theta(make_cache_func<double>([&v]() {return v.Theta(); })),
-		_phi(make_cache_func<double>([&v]() {return v.Phi(); }))
+		_phi(make_cache_func<double>([&v]() {return v.Phi(); })),
+		_beta_transverse(make_cache_func<double>([&v]() {auto g = v.Pt() / v.M(); return sqrt(1 - 1/(g*g)); }))
 	{
 	}
 
@@ -20,12 +21,14 @@ public:
 	double Gamma(void) const { return _gamma.value(); }
 	double Phi(void) const { return _phi.value(); }
 	double Theta(void) const { return _theta.value(); }
+	double BetaTransverse(void) const { return _beta_transverse.value(); }
 
 private:
 	cache_object<double> _beta;
 	cache_object<double> _gamma;
 	cache_object<double> _theta;
 	cache_object<double> _phi;
+	cache_object<double> _beta_transverse;
 };
 
 #endif
