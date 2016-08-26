@@ -334,7 +334,7 @@ bool doMCPreselection(const muon_tree_processor::eventInfo &entry)
 	// https://1drv.ms/u/s!AnlM9ZYrD4WgtXmIm59h9tbdK9WG?wd=target%282015%20Analysis%2FAnalysis%20Topics.one%7C2291C3ED-E8E5-49AA-9C56-882D0513A351%2FClosure%20Test%7CBCD03136-03E7-442E-8CC5-92CFCBA29830%2F%29
 
 	const double ptCut = 0.0;
-	const double etaCut = 3.0;
+	const double etaCut = 2.7;
 
 	return abs(entry.vpi1_eta) <= etaCut
 		&& abs(entry.vpi2_eta) <= etaCut
