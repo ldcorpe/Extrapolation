@@ -6,6 +6,8 @@
 
 #include <string>
 #include <memory>
+#include <vector>
+#include <functional>
 
 class muon_tree_processor
 {
@@ -32,14 +34,30 @@ public:
 		bool RegionD;
 	};
 
+	// This function will be called before the entries are processed. Only if it returns true will
+	// your process function be called. If you want to avoid calling them, pass a special argument
+	// to process_all_entries.
+	void add_preselection(const std::function<bool(const muon_tree_processor::eventInfo&)> &func)
+	{
+		_preselection_list.push_back(func);
+	}
+
 	//Call f for each entry in the ntuple
 	template<class UnaryFunction>
-	void process_all_entries(UnaryFunction f) const
+	void process_all_entries(UnaryFunction f, bool apply_preselection = true) const
 	{
 		auto n_entries = _tree->GetEntries();
 		for (decltype(n_entries) i = 0; i < n_entries; i++) {
 			_tree->GetEntry(i);
-			f(_tree_data);
+			bool good_event = true;
+			if (apply_preselection) {
+				for (auto &f : _preselection_list) {
+					good_event = good_event && f(_tree_data);
+				}
+			}
+			if (good_event) {
+				f(_tree_data);
+			}
 		}
 	}
 
@@ -51,6 +69,7 @@ private:
 	std::unique_ptr<TFile> _file;
 
 	eventInfo _tree_data;
+	std::vector <std::function<bool(const eventInfo&)> > _preselection_list;
 };
 
 #endif

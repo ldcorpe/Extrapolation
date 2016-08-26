@@ -14,7 +14,11 @@ Param(
 # Just run it all four times. This takes quite some time!
 
 ./Release/ExtrapolateByBeta.exe --muonTreeFile "C:\Users\gordo\Downloads\LLPExtrapolationMCTree-$($dsname)lt5mW.root" --output "extrapolate-$($dsname)lt5mw-flat.root" --ctau $ctau5m -UseFlatBeta
+Write-Host ""
 ./Release/ExtrapolateByBeta.exe --muonTreeFile "C:\Users\gordo\Downloads\LLPExtrapolationMCTree-$($dsname)lt9mW.root" --output "extrapolate-$($dsname)lt9mw-flat.root" --ctau $ctau9m -UseFlatBeta
+Write-Host ""
+Write-Host ""
 
 ./Release/ExtrapolateByBeta.exe --muonTreeFile "C:\Users\gordo\Downloads\LLPExtrapolationMCTree-$($dsname)lt5mW.root" --output "extrapolate-$($dsname)lt5mw-beta.root" --ctau $ctau5m
+Write-Host ""
 ./Release/ExtrapolateByBeta.exe --muonTreeFile "C:\Users\gordo\Downloads\LLPExtrapolationMCTree-$($dsname)lt9mW.root" --output "extrapolate-$($dsname)lt9mw-beta.root" --ctau $ctau9m

@@ -54,8 +54,8 @@ size_t tau_loops(double ctau) {
 double n_tau_loops_at_gen = 500;
 size_t tau_loops(double ctau) {
 	if (ctau > 1.0)
-		return 100;
-	return 30;
+		return 200;
+	return 200;
 }
 #endif
 // For the study for the number of loops, see the logbook. But this will affect if the extrap
@@ -83,6 +83,7 @@ template<class T> vector<unique_ptr<T>> DivideShape(
 vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const vector<unique_ptr<TH2F>> &weightHist, bool eventCountOnly = false);
 vector<doubleError> CalcPassedEventsLxy(const muon_tree_processor &reader, double lifetime, Lxy_weight_calculator &lxyWeight);
 std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError &den);
+bool doMCPreselection(const muon_tree_processor::eventInfo &entry);
 void SetAsymError(unique_ptr<TGraphAsymmErrors> &g, int bin, double tau, double bvalue, const pair<double, double> &assErrors);
 
 unique_ptr<TH1D> save_as_histo(const string &name, double number);
@@ -103,10 +104,13 @@ int main(int argc, char**argv)
 		cout << "Output file: " << config._output_filename << endl;
 		cout << "Generated lifetime: " << config._tau_gen << endl;
 		cout << "We are using beta-based extrapolation: " << (config._beta_type == BetaShapeType::FromMC ? "yes" : "no") << endl;
-		cout << endl << endl;
 
-		// Create the muon tree reader object and calculate the lxy weighting histogram
+		// Create the muon tree reader object.
 		muon_tree_processor reader (config._muon_tree_root_file);
+		reader.add_preselection([](const muon_tree_processor::eventInfo &e) {return doMCPreselection(e); });
+
+		// The Lxy efficiency histogram has to be calculated next. We do it with a "denominator", to make sure that we
+		// only are looking at things that are possible.
 		Lxy_weight_calculator2D lxy_weight(reader);
 
 		// Create the histograms we will use to store the raw results.
@@ -138,9 +142,16 @@ int main(int argc, char**argv)
 			h_gen_ratio = DivideShape(r, "h_Ngen_ratio", "Fraction of events in beta space at raw generated ctau");
 		}
 
-		// Calc how many events are passing initially (raw numbers).
+		// And how many events actually are in the signal regions at generation?
 		auto passedEventsAtGen = CalcPassedEvents(reader, vector<unique_ptr<TH2F>>(), false);
-		auto totalEventsAtGen = CalcPassedEvents(reader, vector<unique_ptr<TH2F>>(), true);
+
+		// Count the total number of events, taking into account all weighting (like pileup, etc.).
+		auto generatedEventsWithWeightsInRegions = CalcPassedEvents(reader, vector<unique_ptr<TH2F>>(), true);
+		auto totalGeneratedEvents = generatedEventsWithWeightsInRegions[0];
+		cout << " Total Generated Events: " << totalGeneratedEvents << endl;
+		for (int i = 0; i < 4; i++) {
+			cout << " Total Events in Region " << i << ": " << passedEventsAtGen[i] << endl;
+		}
 
 		// Loop over proper lifetime
 		vector<vector<unique_ptr<TH2F> > > ctau_cache; // Cache of ctau beta plots to be written out later.
@@ -178,8 +189,8 @@ int main(int argc, char**argv)
 
 			// Calculate proper asymmetric errors and save the extrapolation result for the change in efficency.
 			for (int i_region = 0; i_region < 4; i_region++) {
-				doubleError eff = passedEventsAtTau[i_region] / totalEventsAtGen[i_region];
-				std::pair<Double_t, Double_t> bayerr_sig_perc = getBayes(passedEventsAtTau[i_region], totalEventsAtGen[i_region]);
+				doubleError eff = passedEventsAtTau[i_region] / totalGeneratedEvents;
+				std::pair<Double_t, Double_t> bayerr_sig_perc = getBayes(passedEventsAtTau[i_region], totalGeneratedEvents);
 				Double_t erro = (bayerr_sig_perc.first + bayerr_sig_perc.second)*0.5;
 
 				h_res_eff[i_region]->SetBinContent(i_tau + 1, eff.value());
@@ -187,7 +198,7 @@ int main(int argc, char**argv)
 				SetAsymError(g_res_eff[i_region], i_tau, tau, eff.value(), bayerr_sig_perc);
 			}
 
-			cout << " tau = " << tau << " npassed = " << passedEventsAtTau[0] << " passed tau/gen = " << passedEventsAtTau[0] / passedEventsAtGen[0] << " global eff = " << passedEventsAtTau[0] / totalEventsAtGen[0] << endl;
+			cout << " tau = " << tau << " npassed = " << passedEventsAtTau[0] << " passed tau/gen = " << passedEventsAtTau[0] / passedEventsAtGen[0] << " global eff = " << passedEventsAtTau[0] / totalGeneratedEvents << endl;
 		}
 
 		// Save plots in the output file
@@ -220,11 +231,11 @@ int main(int argc, char**argv)
 		// Save basic information for the generated sample.
 		output_file->Add(save_as_histo("generated_ctau", config._tau_gen).release());
 		output_file->Add(save_as_histo("n_passed_as_generated", passedEventsAtGen).release());
-		output_file->Add(save_as_histo("n_as_generated", totalEventsAtGen).release());
+		output_file->Add(save_as_histo("n_as_generated", generatedEventsWithWeightsInRegions).release());
 
 		vector<doubleError> effAtGen;
 		for (int i = 0; i < 4; i++) {
-			effAtGen.push_back(passedEventsAtGen[i] / totalEventsAtGen[i]);
+			effAtGen.push_back(passedEventsAtGen[i] / totalGeneratedEvents);
 		}
 		output_file->Add(save_as_histo("eff_as_generated", effAtGen).release());
 
@@ -306,6 +317,20 @@ variable_binning_builder PopulateBetaBinningForUnity()
 	variable_binning_builder beta_binning(0.0);
 	beta_binning.bin_up_to(1.0, 1.0);
 	return beta_binning;
+}
+
+// Window out events that will never contribute to the lifetime no matter what ctau they are
+// re-simulated at. This main point for this is too prevent us from rolling the dice on the tau's
+// and it will significantly speed this up.
+bool doMCPreselection(const muon_tree_processor::eventInfo &entry)
+{
+	// These cuts derived by looking at eff for signalA region.
+	// https://1drv.ms/u/s!AnlM9ZYrD4WgtXmIm59h9tbdK9WG?wd=target%282015%20Analysis%2FAnalysis%20Topics.one%7C2291C3ED-E8E5-49AA-9C56-882D0513A351%2FClosure%20Test%7CBCD03136-03E7-442E-8CC5-92CFCBA29830%2F%29
+
+	return abs(entry.vpi1_eta) <= 3.0
+		&& abs(entry.vpi2_eta) <= 3.0
+		&& entry.vpi1_pt / 1000.0 > 80.0
+		&& entry.vpi2_pt / 1000.0 > 80.0;
 }
 
 // Sample from the proper lifetime tau for a specific lifetime, and then do the special relativity
@@ -505,7 +530,7 @@ vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const ve
 				nEvents[i_region] += weight;
 			}
 		}
-	});
+	}, !eventCountOnly);
 
 	return nEvents;
 }
