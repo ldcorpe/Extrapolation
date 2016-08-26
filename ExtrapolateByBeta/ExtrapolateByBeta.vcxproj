@@ -92,6 +92,7 @@
     <ClInclude Include="beta_cache.h" />
     <ClInclude Include="cache_object.h" />
     <ClInclude Include="caching_tlz.h" />
+    <ClInclude Include="doubleError.h" />
     <ClInclude Include="Lxy_weight_calculator.h" />
     <ClInclude Include="muon_tree_processor.h" />
     <ClInclude Include="variable_binning_builder.h" />

@@ -53,6 +53,17 @@ public:
 		return *this;
 	}
 
+	// Simple equality test.
+	bool operator== (const doubleError &other) {
+		return _v == other._v
+			&& _err2 == other._err2;
+	}
+
+	// And the opposite
+	bool operator!= (const doubleError &other) {
+		return !(*this == other);
+	}
+
 private:
 	double _v;
 	double _err2;

@@ -46,16 +46,14 @@ using namespace Wild::CommandLine;
 
 // How many loops in tau should we do? This is a bit dynamic
 #ifdef TEST_RUN
-double n_tau_loops_at_gen = 500;
+double n_tau_loops_at_gen = 200;
 size_t tau_loops(double ctau) {
-	return 200;
+	return n_tau_loops_at_gen;
 }
 #else
-double n_tau_loops_at_gen = 500;
+double n_tau_loops_at_gen = 200;
 size_t tau_loops(double ctau) {
-	if (ctau > 1.0)
-		return 200;
-	return 200;
+	return n_tau_loops_at_gen;
 }
 #endif
 // For the study for the number of loops, see the logbook. But this will affect if the extrap
@@ -82,6 +80,7 @@ template<class T> vector<unique_ptr<T>> DivideShape(
 	const string &name, const string &title);
 vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const vector<unique_ptr<TH2F>> &weightHist, bool eventCountOnly = false);
 vector<doubleError> CalcPassedEventsLxy(const muon_tree_processor &reader, double lifetime, Lxy_weight_calculator &lxyWeight);
+vector<doubleError> GenericCalcPassedEvents(const muon_tree_processor &reader, bool ignore_preselection = false);
 std::pair<Double_t, Double_t> getBayes(const doubleError &num, const doubleError &den);
 bool doMCPreselection(const muon_tree_processor::eventInfo &entry);
 void SetAsymError(unique_ptr<TGraphAsymmErrors> &g, int bin, double tau, double bvalue, const pair<double, double> &assErrors);
@@ -152,6 +151,14 @@ int main(int argc, char**argv)
 		for (int i = 0; i < 4; i++) {
 			cout << " Total Events in Region " << i << ": " << passedEventsAtGen[i] << endl;
 		}
+		
+		// Next, do a double check to make sure our preselection isn't eliminating any of our signal.
+		auto crossCheckNumberOfEventsInRegions = GenericCalcPassedEvents(reader, true);
+		for (int i = 0; i < 4; i++) {
+			if (crossCheckNumberOfEventsInRegions[i] != passedEventsAtGen[i]) {
+				cout << " ** ERROR - in region " << i << " the number of events passed " << crossCheckNumberOfEventsInRegions[i] << " does not match number after preselection " << passedEventsAtGen[i] << endl;
+			}
+		}
 
 		// Loop over proper lifetime
 		vector<vector<unique_ptr<TH2F> > > ctau_cache; // Cache of ctau beta plots to be written out later.
@@ -175,7 +182,7 @@ int main(int argc, char**argv)
 					h_Nratio.push_back(move(h));
 				}
 
-				if (i_tau % 10 == 0) {
+				if (i_tau % 1 == 0) {
 					ctau_cache.push_back(move(h_caut_ratio));
 				}
 
@@ -309,8 +316,13 @@ variable_binning_builder PopulateBetaBinning()
 {
 	variable_binning_builder beta_binning(0.0);
 	beta_binning.bin_up_to(0.8, 0.2);
-	beta_binning.bin_up_to(1.0, 0.05);
+	beta_binning.bin_up_to(0.95, 0.05);
+	beta_binning.bin_up_to(1.0, 0.005);
 	return beta_binning;
+
+	// for 50 GeV scalar, at 300 GeV, beta = 0.986
+	// for 50 GeV scalar, at 200 GeV, beta = 0.968
+	// for 50 GeV scalar, at 100 GeV, beta = 0.866
 }
 variable_binning_builder PopulateBetaBinningForUnity()
 {
@@ -329,8 +341,8 @@ bool doMCPreselection(const muon_tree_processor::eventInfo &entry)
 
 	return abs(entry.vpi1_eta) <= 3.0
 		&& abs(entry.vpi2_eta) <= 3.0
-		&& entry.vpi1_pt / 1000.0 > 80.0
-		&& entry.vpi2_pt / 1000.0 > 80.0;
+		&& entry.vpi1_pt / 1000.0 > 0.0
+		&& entry.vpi2_pt / 1000.0 > 0.0;
 }
 
 // Sample from the proper lifetime tau for a specific lifetime, and then do the special relativity
@@ -531,6 +543,28 @@ vector<doubleError> CalcPassedEvents(const muon_tree_processor &reader, const ve
 			}
 		}
 	}, !eventCountOnly);
+
+	return nEvents;
+}
+
+// Do a very generic calculation on the number of events that have passed.
+vector<doubleError> GenericCalcPassedEvents(const muon_tree_processor &reader, bool ignore_preselection)
+{
+	vector<doubleError> nEvents(4);
+
+	reader.process_all_entries([&nEvents](const muon_tree_processor::eventInfo &entry) {
+
+		doubleError weight(entry.weight, entry.weight);
+
+		int i_region = entry.RegionA ? 0
+			: entry.RegionB ? 1
+			: entry.RegionC ? 2
+			: entry.RegionD ? 3
+			: -1;
+		if (i_region >= 0) {
+			nEvents[i_region] += weight;
+		}
+	}, !ignore_preselection);
 
 	return nEvents;
 }

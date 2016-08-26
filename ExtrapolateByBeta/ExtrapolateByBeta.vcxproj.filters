@@ -44,6 +44,9 @@
     <ClInclude Include="caching_tlz.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="doubleError.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
