@@ -18,21 +18,6 @@ Legend("RegionD" => {Color => 4, Title => "D"});
 #Legend("compare" => {Color => 2, Title => "Without Pileup Reweighting"});
 
 sample_metadata = {
-	"1000pi400lt5m" => {
-		m => "1000", pi => "400",
-		lt => 5,
-		Color => 1
-	},
-	"1000pi400lt5mW" => {
-		m => "1000", pi => "400",
-		lt => 5,
-		Color => 1
-	},
-	"1000pi400lt9mW" => {
-		m => "1000", pi => "400",
-		lt => 9,
-		Color => 7
-	},
 	"200pi50lt5m" => {
 		m => "200", pi => "50",
 		lt => 5,
@@ -87,5 +72,30 @@ sample_metadata = {
 		m => "600", pi => "50",
 		lt => 5,
 		Color => 8
+	},
+	"1000pi50lt5m" => {
+		m => "1000", pi => "50",
+		lt => 5,
+		Color => 1
+	},
+	"1000pi150lt5m" => {
+		m => "1000", pi => "150",
+		lt => 5,
+		Color => 1
+	},
+	"1000pi400lt5m" => {
+		m => "1000", pi => "400",
+		lt => 5,
+		Color => 1
+	},
+	"1000pi400lt5mW" => {
+		m => "1000", pi => "400",
+		lt => 5,
+		Color => 1
+	},
+	"1000pi400lt9mW" => {
+		m => "1000", pi => "400",
+		lt => 9,
+		Color => 7
 	}
 };

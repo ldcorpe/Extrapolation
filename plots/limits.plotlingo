@@ -3,6 +3,7 @@
 #
 
 include ("common.plotlingo");
+include ("dataset_list.plotlingo");
 #plotformats = ["png", "pdf"];
 
 # Legend for the limit plots
@@ -13,60 +14,61 @@ Legend("limit" => {Title => "observed limit", Color => 1, LineWidth=>2, LineStyl
 
 # Metadata for each dataset so we can do the proper lookup
 metadata = {
-	"1000pi400lt5m" => {
-		m => "1000", pi => "400",
-		place => "UpperRight", xm => 0.15, ym => 0.1, xtext => 0.483, ytext =>  0.574,
-		sigma_xmin => 0.01
-	},
 	"200pi50lt5m" => {
-		m => "200", pi => "50",
 		place => "UpperRight", xm => 0.15, ym => 0.1, xtext => 0.483, ytext =>  0.574,
 		sigma_xmin => 0.01
 	},
 	"200pi25lt5m" => {
-		m => "200", pi => "25",
 		place => "LowerLeft", xm => 0.15, ym => 0.2, xtext => 0.15, ytext =>  0.15,
 		sigma_xmin => 0.01
 	},
 	"200pi8lt5m" => {
-		m => "200", pi => "8",
 		place => "UpperRight", xm => 0.15, ym => 0.1, xtext => 0.483, ytext =>  0.574,
 		sigma_xmin => 0.01
 	},
 	"400pi100lt5m" => {
-		m => "400", pi => "100",
 		place => "UpperRight", xm => 0.1, ym => 0.1, xtext => 0.533, ytext =>  0.574,
 		sigma_xmin => 0.05
 	},
 	"400pi50lt5m" => {
-		m => "400", pi => "50",
-		place => "UpperRight", xm => 0.07, ym => 0.1, xtext => 0.563, ytext =>  0.574,
+		place => "UpperRight", xm => 0.08, ym => 0.1, xtext => 0.553, ytext =>  0.574,
 		sigma_xmin => 0.01
 	},
 	"600pi150lt5m" => {
-		m => "600", pi => "150",
 		place => "UpperRight", xm => 0.1, ym => 0.1, xtext => 0.533, ytext =>  0.574,
 		sigma_xmin => 0.01
 	},
 	"600pi50lt5m" => {
-		m => "600", pi => "50",
 		place => "UpperRight", xm => 0.2, ym => 0.1, xtext => 0.433, ytext =>  0.574,
 		sigma_xmin => 0.01
+	},
+	"1000pi50lt5m" => {
+		place => "UpperRight", xm => 0.15, ym => 0.1, xtext => 0.483, ytext =>  0.574,
+		sigma_xmin => 0.01
+	},
+	"1000pi150lt5m" => {
+		place => "UpperRight", xm => 0.15, ym => 0.1, xtext => 0.483, ytext =>  0.574,
+		sigma_xmin => 0.1
+	},
+	"1000pi400lt5m" => {
+		place => "UpperRight", xm => 0.15, ym => 0.1, xtext => 0.483, ytext =>  0.574,
+		sigma_xmin => 0.4
 	}
 };
 
 # Loop over each dataset
 for(ds_name, ds_list) {
 	eval("ds = f_limit_{ds_name};");
-	meta = metadata[ds_name];
-	mass = meta["m"];
-	pi = meta["pi"];
-	place = meta["place"];
-	xm = meta["xm"];
-	ym = meta["ym"];
-	xtext = meta["xtext"];
-	ytext = meta["ytext"];
-	sigma_xmin = meta["sigma_xmin"];
+	meta_sample = sample_metadata[ds_name];
+	meta_place = metadata[ds_name];
+	mass = meta_sample["m"];
+	pi = meta_sample["pi"];
+	place = meta_place["place"];
+	xm = meta_place["xm"];
+	ym = meta_place["ym"];
+	xtext = meta_place["xtext"];
+	ytext = meta_place["ytext"];
+	sigma_xmin = meta_place["sigma_xmin"];
 
 	# Load the data itself
 	expected = ds.Get("xsec_BR_95CL").tag("expected");
