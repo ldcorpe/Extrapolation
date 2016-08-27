@@ -3,14 +3,14 @@
 #
 
 # Base everything on this set of MC files
-$mcFilesJobID = 37
+$mcFilesJobID = 32
 
 # When we run a limit extrapolation, we need a template job. This is the id of the template job which we will
 # base all our runs off of.
 $runLimitExtrapTemplateJobID = 73
 
 # Minimum job number in the LifetimeEfficiencies and limit extrap jenkins task to search, just to keep things reasonable
-$mcEfficienciesMinJobID = 72
+$mcEfficienciesMinJobID = 95
 $runLimitExtrapMinJobID = 70
 
 #
