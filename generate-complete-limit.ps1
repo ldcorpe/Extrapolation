@@ -11,7 +11,7 @@ $runLimitExtrapTemplateJobID = 73
 
 # Minimum job number in the LifetimeEfficiencies and limit extrap jenkins task to search, just to keep things reasonable
 $mcEfficienciesMinJobID = 95
-$runLimitExtrapMinJobID = 70
+$runLimitExtrapMinJobID = 130
 
 #
 # Other config (hopefully don't need to be modified much!)
@@ -89,7 +89,7 @@ function findLimitExtrap($jobid)
 		return "Limit Extrapolation job for $ds submitted."
 	}
 	if ($jobMatch.Status -ne "SUCCESS") {
-		return "Limit Extrapolation job for $ds ($($jobMatch.Id)) has not finished ($($jobMatch.Status)). Please re-run script or fix job error."
+		return "# Limit Extrapolation job for $ds ($($jobMatch.Id)) has not finished ($($jobMatch.Status)). Please re-run script or fix job error."
 	}
 	$r = @{}
 	$r["Dataset"] = $ds
