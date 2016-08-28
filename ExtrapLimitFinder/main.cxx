@@ -197,7 +197,7 @@ config parse_command_line(int argc, char **argv)
 	result.limit_settings.systematic_errors["lumi"] = 0.021; // Final lumi is 2.1%
 
 	// Constant MC errors.
-	result.limit_settings.systematic_errors["mc_ISRFSR"] = 0.02;
+	//result.limit_settings.systematic_errors["mc_ISRFSR"] = 0.02;
 
 	// Constant ABCD errors
 	result.limit_settings.systematic_errors["abcd"] = 0.36;
