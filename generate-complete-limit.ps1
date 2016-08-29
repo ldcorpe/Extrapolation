@@ -11,7 +11,7 @@ $runLimitExtrapTemplateJobID = 73
 
 # Minimum job number in the LifetimeEfficiencies and limit extrap jenkins task to search, just to keep things reasonable
 $mcEfficienciesMinJobID = 95
-$runLimitExtrapMinJobID = 130
+$runLimitExtrapMinJobID = 146
 
 #
 # Other config (hopefully don't need to be modified much!)
