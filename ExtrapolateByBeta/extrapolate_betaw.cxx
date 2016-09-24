@@ -45,7 +45,7 @@ using namespace Wild::CommandLine;
 
 // How many loops in tau should we do? This is a bit dynamic
 #ifdef TEST_RUN
-double n_tau_loops_at_gen = 200;
+size_t n_tau_loops_at_gen = 200;
 size_t tau_loops(double ctau) {
 	return n_tau_loops_at_gen;
 }

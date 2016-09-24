@@ -148,6 +148,9 @@ config parse_command_line(int argc, char **argv)
 		Arg("nC", "C", "How many events observed in data in region C", Arg::Is::Required),
 		Arg("nD", "D", "How many events observed in data in region D", Arg::Is::Required),
 
+		Arg("Luminosity", "L", "Lumi, in fb, for this dataset", Arg::Is::Optional),
+		Arg("ABCDError", "e", "Error on the ABCD component", Arg::Is::Optional),
+
 		// Output options
 		Arg("OutputFile", "f", "Name of output root file for limit results. By default based on input filename", Arg::Is::Optional),
 
@@ -192,6 +195,9 @@ config parse_command_line(int argc, char **argv)
 	result.limit_settings.nToys = args.IsSet("NToys")
 		? args.GetAsInt("NToys")
 		: 5000;
+	result.limit_settings.luminosity = args.IsSet("Luminosity")
+		? args.GetAsFloat("Luminosity")
+		: 3.2;
 
 	// Systematic Errors
 	result.limit_settings.systematic_errors["lumi"] = 0.021; // Final lumi is 2.1%
@@ -200,7 +206,9 @@ config parse_command_line(int argc, char **argv)
 	//result.limit_settings.systematic_errors["mc_ISRFSR"] = 0.02;
 
 	// Constant ABCD errors
-	result.limit_settings.systematic_errors["abcd"] = 0.36;
+	result.limit_settings.systematic_errors["abcd"] = args.IsSet("ABCDError")
+		? args.GetAsFloat("ABCDError")
+		: 0.36;
 
 	// Next we have to determine what mass point we are looking at. This is required as the
 	// systematic errors do vary with mass.

@@ -75,7 +75,7 @@ inline void write_limit_output_file(const abcd_limit_config &lconfig, const std:
 {
 	auto f = std::unique_ptr<TFile>(TFile::Open(lconfig.fileName.c_str(), "RECREATE"));
 
-	double lumi = 3.2 * 1000; //pb^-1
+	double lumi = lconfig.luminosity * 1000; //pb^-1
 
 	// Plot signal strength
 	make_group_plotter(binning, "mu_95", "mu_sigma_",

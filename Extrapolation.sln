@@ -14,6 +14,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LimitCode", "LimitCode", "{79A02913-C5E4-4151-AB23-E5FE08BF0742}"
 	ProjectSection(SolutionItems) = preProject
 		get-limit-results-as-table.ps1 = get-limit-results-as-table.ps1
+		Invoke-FuturePerformanceEvaluation.ps1 = Invoke-FuturePerformanceEvaluation.ps1
 		submit-limit-parameter-exploration.ps1 = submit-limit-parameter-exploration.ps1
 	EndProjectSection
 EndProject

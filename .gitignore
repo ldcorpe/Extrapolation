@@ -260,3 +260,5 @@ ExtrapLimitFinder/brasilianFlag.*
 /ExtrapLimitFinder/run
 /ExtrapLimitFinder/ExtrapLimitFinder
 *.pdf
+/junk.txt
+/brasilianFlag.C
