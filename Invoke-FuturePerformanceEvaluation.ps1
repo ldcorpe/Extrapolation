@@ -63,8 +63,9 @@ function Invoke-LumiRun ($abcdInfo, $lum, $abcdError, $jobID, $dataset) {
 		$r | Set-Content $logfile
 	}
 
-	$limit = Get-TH1Property "$stubname.root" Minimum xsec_BR_95CL
-	return $limit
+	$limitExp = Get-TH1Property "$stubname.root" Minimum xsec_BR_95CL
+	$limitObs = Get-TH1Property "$stubname.root" Minimum xsec_BR_events__limit
+	return ($limitExp, $limitObs)
 }
 
 function Get-ABCDScaled ($abcdOriginal, $scale) {
@@ -78,6 +79,7 @@ function Get-ABCDScaled ($abcdOriginal, $scale) {
 #########
 # Run it!
 
+Write-Output "Dataset, Extrapolation, Expected, Observed"
 foreach ($signal in $singalSamples) {
 	$dataset = $signal[0]
 	$jobID = $signal[1]
@@ -87,25 +89,25 @@ foreach ($signal in $singalSamples) {
 
 	# Get the default running result
 	$limit = Invoke-LumiRun $abcd $lumi $abcdError $jobID $dataset
-	Write-Output "$dataset, Default, $limit"
+	Write-Output "$dataset, Default, $($limit[0]), $($limit[1])"
 
 	# Next, do the increased amount of lumi
 	foreach ($newLumi in $otherLumis) {
 		$factor = $newLumi / $lumi
 		$newabcd = Get-ABCDScaled $abcd $factor
 	    $limit = Invoke-LumiRun $newabcd $newLumi $abcdError $jobID $dataset
-		Write-Output "$dataset, $newLumi fb, $limit"
+		Write-Output "$dataset, $newLumi fb, $($limit[0]), $($limit[1])"
 	}
 
 	# Next, lets look at a change in the error
 	foreach($newABCDError in $otherAbcdErrors) {
 	    $limit = Invoke-LumiRun $abcd $lumi $newABCDError $jobID $dataset
-		Write-Output "$dataset, $newABCDError ABCD Error, $limit"
+		Write-Output "$dataset, $newABCDError ABCD Error, $($limit[0]), $($limit[1])"
 	}
 
 	foreach($abcdFactor in $abcdFactors) {
 		$newabcd = Get-ABCDScaled $abcd $abcdFactor
 	    $limit = Invoke-LumiRun $newabcd $lumi $abcdError $jobID $dataset
-		Write-Output "$dataset, $abcdFactor background scaling, $limit"
+		Write-Output "$dataset, $abcdFactor background scaling, $($limit[0]), $($limit[1])"
 	}
 }
