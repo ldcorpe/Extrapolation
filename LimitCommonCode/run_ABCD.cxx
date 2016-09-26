@@ -368,24 +368,24 @@ HypoTestInvTool::LimitResults simultaneousABCD(const Double_t n[4], const Double
 	wspace->addClassImplImportDir(".");
 
 	// observed events
-	wspace->factory("NA[0,1000]");
-	wspace->factory("NB[0,1000]");
-	wspace->factory("NC[0,1000]");
-	wspace->factory("ND[0,1000]");
+	wspace->factory("NA[0,20000]");
+	wspace->factory("NB[0,20000]");
+	wspace->factory("NC[0,20000]");
+	wspace->factory("ND[0,20000]");
 
 	// POI
-	wspace->factory(TString::Format("mu[%f,0,1000]", mu_guess));  // mu = NsA/Ns0 (Ns0 = expected events)
+	wspace->factory(TString::Format("mu[%f,0,1]", mu_guess));  // mu = NsA/Ns0 (Ns0 = expected events)
 	//note: SM means mu=0 (used for the BG only hypotesis for the expected limit
 
 	// pdf parameters
 	wspace->factory(TString::Format("lumi[%f]", 1.0));    // Luminosity (scale factor wrt the luinosity on dat)
 
-	wspace->factory(TString::Format("Ns0[%f,0,1000]", ns_A)); //Expected signal in region A
-	wspace->factory(TString::Format("effB[%f,0,1000]", sr_B)); //Sig. eff. in region B wrt region A
-	wspace->factory(TString::Format("effC[%f,0,1000]", sr_C)); //Sig. eff. in region C wrt region A
-	wspace->factory(TString::Format("effD[%f,0,1000]", sr_D)); //Sig. eff. in region D wrt region A
+	wspace->factory(TString::Format("Ns0[%f,0,20000]", ns_A)); //Expected signal in region A
+	wspace->factory(TString::Format("effB[%f,0,5000]", sr_B)); //Sig. eff. in region B wrt region A
+	wspace->factory(TString::Format("effC[%f,0,5000]", sr_C)); //Sig. eff. in region C wrt region A
+	wspace->factory(TString::Format("effD[%f,0,5000]", sr_D)); //Sig. eff. in region D wrt region A
 
-	wspace->factory(TString::Format("Nq[%f,0,1000]", ta_A)); //number of Multijet events in region A
+	wspace->factory(TString::Format("Nq[%f,0,20000]", ta_A)); //number of Multijet events in region A
 	wspace->factory(TString::Format("tauB[%f,0,1000]", ta_B)); //Multijet BG eff. in region B wrt region A
 	wspace->factory(TString::Format("tauD[%f,0,1000]", ta_D)); //Multijet BG eff. in region D wrt region A
 
@@ -408,7 +408,7 @@ HypoTestInvTool::LimitResults simultaneousABCD(const Double_t n[4], const Double
 	wspace->factory("alpha_lumi[1, 0, 10]");
 	wspace->factory("nom_lumi[1, 0, 10]");
 	ostringstream lumi_error;
-	lumi_error << "nom_sigma_lumi[" << get_error (systematic_errors, "lumi") << "0.021]";
+	lumi_error << "nom_sigma_lumi[" << get_error (systematic_errors, "lumi") << "]";
 	wspace->factory(lumi_error.str().c_str());  // <--  2.1% final run2 2015
 	wspace->factory("Gaussian::constraint_lumi(nom_lumi, alpha_lumi, nom_sigma_lumi)");
 
@@ -622,37 +622,4 @@ HypoTestInvTool::LimitResults simultaneousABCD(const Double_t n[4], const Double
 	auto score = StandardHypoTestInvDemo(0, "", out_filename, "wspace", "mc", "mc", "obsData", calculationType, testStatType, true, par_npointscan, par_poi_min, par_poi_max, par_ntoys);
 
 	return score;
-}
-
-// driver (blind: kTRUE --> blinded signal region,  kFALSE: unblinded
-void run_ABCD(Bool_t blind = kTRUE) {
-
-	// inputs Lepton Jets
-	Double_t xs[4] = { 94.2786, 20.5344, 0.263938, 1.79478 }; //  signal
-   //Double_t xs[4] = {94.2786/100, 20.5344/100, 0.263938/100, 1.79478/100}; // scaled signal
-	Double_t xn[4] = { 46.,21.,6.,10. };  // Lepton Jets obs data
-
-	//  CalRatio signal
-	// Cristiano's Xsec; regions as defined in our note: A = B*C/D. Here it's defined A = B*D/C so changing C <--> D as def in the note
-	//  Double_t xs[4] = {7.4715,1.12939,0.0939429,0.494767}; // CalRatio signal, 1000_150_9m; Cristiano's Xsec = 0.1233 pb
-	//Double_t xs[4] = {119.659,17.4703,1.00324,7.26485}; // CalRatio signal, 600_150_9m; Cristiano's Xsec = 2pb: 
-	// Double_t xs[4] = {415.528,62.7199,3.68,25.76}; // CalRatio signal, 400_100_9m; Cristiano's Xsec = 9.5 pb
-
-	// 1pb Xsec
-	//Double_t xs[4] = {7.4715/0.1233,1.12939/0.1233,0.0939429/0.1233,0.494767/0.1233}; // CalRatio signal, 1000_150_9m; 1pb Xsec
-	//Double_t xs[4] = {119.659/2,17.4703/2,1.00324/2,7.26485/2}; // CalRatio signal, 600_150_9m; 1pb Xsec
-	//Double_t xs[4] = {415.528/9.5,62.7199/9.5,3.68/9.5,25.76/9.5}; // CalRatio signal, 400_100_9m; 1pb Xsec
-
-
-	//Double_t xn[4] = {1.,21.,12.,10.};  // CalRatio obs data: regions as defined in our note: A = B*C/D. Here it's defined A = B*D/C so changing C <--> D as def in the note. Setting A to 1 (blinded)
-
-	Double_t xb[4] = { 0.,0.,0.,0. }; // MC BG not used in this example
-	Double_t xc[4] = { 0.,0.,0.,0. }; // other data-driven BG not used in this example
-
-	auto z = simultaneousABCD(xn, xs, xb, xc, "ABCD_ws_test.root", kFALSE, kFALSE, blind);
-
-	std::cout << "Input: obs  A/B/C/D: " << xn[0] << " / " << xn[1] << " / " << xn[2] << " / " << xn[3] << endl;
-	std::cout << "Input: sig  A/B/C/D: " << xs[0] << " / " << xs[1] << " / " << xs[2] << " / " << xs[3] << endl;
-	std::cout << "Result: score: " << z << std::endl;
-
 }
