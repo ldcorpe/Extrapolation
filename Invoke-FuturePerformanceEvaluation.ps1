@@ -23,15 +23,48 @@ $abcdFactors = (0.90, 0.80, 0.60)
 # What samples to look at and where to get the MC root files.
 $singalSamples = (("1000pi400lt5m", 104), ("400pi50lt5m", 116))
 
-function Invoke-LumiRun ($abcdInfo, $lumi, $abcdError, $jobID, $dataset) {
-	$r = .\Release\ExtrapLimitFinder.exe -extrapFile $inputFile.FullName -UseAsym -nA $abcd[0] -nB $abcd[1] -nC $abcd[2] -nD $abcd[3] -OutputFile $dataset-normal.root -Luminosity $lumi -ABCDError $abcdError
-	#$r = Get-Content junk.txt
-	$l = $r -match "Limit rescaled"
-	if ($l.Trim() -match "95%: ([0-9]+\.[0-9]+)") {
-		$limit = $Matches[1]
-		return $limit
+###################
+# We need some help to get at some ROOT files... So we are going to have to pull a slippery one here since we aren't quite all the way
+# there with how to distribute this.
+
+# Make sure we are runnign the 32 bit of powershell, otherwise we can't
+# load in the ROOT versions of things
+if ($env:PROCESSOR_ARCHITECTURE -ne "x86") {
+	Write-Error "You are not running the 32 bit version of powershell. Do it by starting powershell with 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe'"
+	return
+}
+
+# Add ROOT to the path if not there already.
+if (-not $($env:PATH.Contains(("5.34.36")))) {
+	$env:ROOTSYS="C:\Users\Gordon\AppData\Local\Temp\root\root-5.34.36-vc12"
+	$env:PATH="$env:PATH;$env:ROOTSYS\bin"
+}
+
+# Get the ROOT access guy
+$pathToCMD = $PWD.Path + "\..\..\PSCernRootUtilities\PSCernRootCommands\bin\x86\Debug\PSCernRootCommands.dll"
+$fileio = [System.IO.FileInfo] $pathToCMD
+if (-Not $($fileio.Exists)) {
+	$msg = "Unable to locate PSCernRootCommands at " + $fileio.FullName
+	Write-Error $msg
+	return
+}
+Import-Module $fileio.FullName
+
+#PS C:\Users\Gordon> $env:ROOTSYS="C:\Users\Gordon\AppData\Local\Temp\root\root-5.34.36-vc12"
+#PS C:\Users\Gordon> $env:PATH="$env:PATH;$env:ROOTSYS\bin"
+
+########################
+
+function Invoke-LumiRun ($abcdInfo, $lum, $abcdError, $jobID, $dataset) {
+	$stubname = "LimitFinderLog-$lum-$abcdError-$jobID-$dataset-$abcdInfo".Replace(" ", "-")
+	$logfile = "$stubname.log".Replace(" ", "-")
+	if (-not $(Test-Path $logfile)) {
+		$r = .\Release\ExtrapLimitFinder.exe -extrapFile $inputFile.FullName -UseAsym -nA $abcdInfo[0] -nB $abcdInfo[1] -nC $abcdInfo[2] -nD $abcdInfo[3] -OutputFile "$stubname.root" -Luminosity $lum -ABCDError $abcdError 2>1
+		$r | Set-Content $logfile
 	}
-	return 0.0
+
+	$limit = Get-TH1Property "$stubname.root" Minimum xsec_BR_95CL
+	return $limit
 }
 
 function Get-ABCDScaled ($abcdOriginal, $scale) {
@@ -58,9 +91,9 @@ foreach ($signal in $singalSamples) {
 
 	# Next, do the increased amount of lumi
 	foreach ($newLumi in $otherLumis) {
-		$factor = $newLimi / $lumi
+		$factor = $newLumi / $lumi
 		$newabcd = Get-ABCDScaled $abcd $factor
-	    $limit = Invoke-LumiRun $newabcd $newLimi $abcdError $jobID $dataset
+	    $limit = Invoke-LumiRun $newabcd $newLumi $abcdError $jobID $dataset
 		Write-Output "$dataset, $newLumi fb, $limit"
 	}
 
@@ -72,7 +105,7 @@ foreach ($signal in $singalSamples) {
 
 	foreach($abcdFactor in $abcdFactors) {
 		$newabcd = Get-ABCDScaled $abcd $abcdFactor
-	    $limit = Invoke-LumiRun $newabcd $newLimi $abcdError $jobID $dataset
+	    $limit = Invoke-LumiRun $newabcd $lumi $abcdError $jobID $dataset
 		Write-Output "$dataset, $abcdFactor background scaling, $limit"
 	}
 }
