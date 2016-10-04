@@ -7,7 +7,7 @@
 #
 
 # The number of events in each of the A, B, C, and D regions
-$abcd = (4, 16, 39, 34)
+$abcd = (24, 16, 39, 34)
 
 # Lumi in fb of the current results
 $lumi = 3.2
@@ -21,6 +21,7 @@ $otherAbcdErrors = (0.10, 0.20)
 $abcdFactors = (0.90, 0.80, 0.60)
 
 # What samples to look at and where to get the MC root files.
+#$singalSamples = (("1000pi400lt5m", 104), ("400pi50lt5m", 116))
 $singalSamples = (("1000pi400lt5m", 104), ("400pi50lt5m", 116))
 
 ###################
@@ -55,7 +56,7 @@ Import-Module $fileio.FullName
 
 ########################
 
-function Invoke-LumiRun ($abcdInfo, $lum, $abcdError, $jobID, $dataset) {
+function Invoke-LumiRun ($inputFile, $abcdInfo, $lum, $abcdError, $jobID, $dataset) {
 	$stubname = "LimitFinderLog-$lum-$abcdError-$jobID-$dataset-$abcdInfo".Replace(" ", "-")
 	$logfile = "$stubname.log".Replace(" ", "-")
 	if (-not $(Test-Path $logfile)) {
@@ -76,6 +77,21 @@ function Get-ABCDScaled ($abcdOriginal, $scale) {
 	return ($a, $b, $c, $d)
 }
 
+# Function that will run a start job and setup the output to be collected.
+$jobs = @()
+function Start-LumiCalculation ($message, $inputFile, $abcdInfo, $lum, $abcdError, $jobID, $dataset) {
+	# Rate limit
+	while (@(Get-Job -State Running).Count -ge 3) {
+		Start-Sleep -Seconds 10
+	}
+
+	$jobs += Start-Job -ScriptBlock {
+		Param($message, $inputFile, $abcdInfo, $lum, $abcdError, $jobID, $dataset)
+		$limit = Invoke-LumiRun($inputFile, $abcdInfo, $lum, $abcdError, $jobID, $dataset)
+		return ($limit, $dataset, $message)
+	}
+}
+
 #########
 # Run it!
 
@@ -88,26 +104,29 @@ foreach ($signal in $singalSamples) {
 	$inputFile = Get-JenkinsArtifact -JobUri http://jenks-higgs.phys.washington.edu:8080/view/LLP/job/Limit-LifetimeEfficiencies/ -JobId $jobID -ArtifactName lifetime_eff_$dataset.root
 
 	# Get the default running result
-	$limit = Invoke-LumiRun $abcd $lumi $abcdError $jobID $dataset
-	Write-Output "$dataset, Default, $($limit[0]), $($limit[1])"
+	Start-LumiCalculation "Default" $inputFile $abcd $lumi $abcdError $jobID $dataset
+	#Write-Output "$dataset, Default, $($limit[0]), $($limit[1])"
 
 	# Next, do the increased amount of lumi
 	foreach ($newLumi in $otherLumis) {
 		$factor = $newLumi / $lumi
 		$newabcd = Get-ABCDScaled $abcd $factor
-	    $limit = Invoke-LumiRun $newabcd $newLumi $abcdError $jobID $dataset
-		Write-Output "$dataset, $newLumi fb, $($limit[0]), $($limit[1])"
+	    Start-LumiCalculation "$newLumi fb" $inputFile $newabcd $newLumi $abcdError $jobID $dataset
+		#Write-Output "$dataset, $newLumi fb, $($limit[0]), $($limit[1])"
 	}
 
 	# Next, lets look at a change in the error
 	foreach($newABCDError in $otherAbcdErrors) {
-	    $limit = Invoke-LumiRun $abcd $lumi $newABCDError $jobID $dataset
-		Write-Output "$dataset, $newABCDError ABCD Error, $($limit[0]), $($limit[1])"
+	    Start-LumiCalculation "$newABCDError ABCD Error" $inputFile $abcd $lumi $newABCDError $jobID $dataset
+		#Write-Output "$dataset, $newABCDError ABCD Error, $($limit[0]), $($limit[1])"
 	}
 
 	foreach($abcdFactor in $abcdFactors) {
 		$newabcd = Get-ABCDScaled $abcd $abcdFactor
-	    $limit = Invoke-LumiRun $newabcd $lumi $abcdError $jobID $dataset
-		Write-Output "$dataset, $abcdFactor background scaling, $($limit[0]), $($limit[1])"
+	    Start-LumiCalculation "$abcdFactor background scaling" $inputFile $newabcd $lumi $abcdError $jobID $dataset
+		#Write-Output "$dataset, $abcdFactor background scaling, $($limit[0]), $($limit[1])"
 	}
 }
+
+# Finally, collect all the jobs and dump out the info.
+$job | Wait-Job | Receive-Job | % { Write-Output "$_[1] $_[2] $_[0]" }
