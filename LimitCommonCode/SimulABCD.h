@@ -108,9 +108,11 @@ inline limit_result do_abcd_limit(const ABCD &data, const signal_lifetime &expec
 	auto rescaled_expected_signal = expected_signal;
 	rescaled_expected_signal.signalEvents = rescale_events_in_regionA(expected_signal.signalEvents, config.rescaleSignalTo);
 
+	auto calc_filename = std::string("limit_calc_") + config.fileName;
+
 	auto limit = simultaneousABCD(ABCD_as_vector_CalRToLJ(data), ABCD_as_vector_CalRToLJ(rescaled_expected_signal.signalEvents),
 		dummy, dummy,
-		"limit_calc.root",
+		calc_filename,
 		false, false,
 		data.A == 0,
 		config.useToys ? 0 : 2,
