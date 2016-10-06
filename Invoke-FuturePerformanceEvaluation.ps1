@@ -15,10 +15,10 @@ $otherLumis = (30, 300)
 
 # the size of the ABCD error
 $abcdError = 0.36
-$otherAbcdErrors = (0.10, 0.20)
+$otherAbcdErrors = (0.10, 0.20, 0.30, 0.33)
 
 # Fraction of background we find.
-$abcdFactors = (0.90, 0.80, 0.60)
+$abcdFactors = (0.99, 0.95, 0.90, 0.80, 0.60, 0.5, 0.3)
 
 # What samples to look at and where to get the MC root files.
 #$singalSamples = (("1000pi400lt5m", 104), ("400pi50lt5m", 116))
