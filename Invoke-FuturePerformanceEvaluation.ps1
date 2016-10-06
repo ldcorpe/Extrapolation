@@ -67,9 +67,10 @@ function Get-ABCDScaled ($abcdOriginal, $scale) {
 
 # Function that will run a start job and setup the output to be collected.
 $jobs = @()
+$jobsAtOnce = $(Get-WmiObject –class Win32_processor).NumberOfCores
 function Start-LumiCalculation ($message, $inputFile, $abcdInfo, $lum, $abcdError, $jobID, $dataset) {
 	# Rate limit
-	while (@(Get-Job -State Running).Count -ge 3) {
+	while (@(Get-Job -State Running).Count -ge $jobsAtOnce) {
 		Start-Sleep -Seconds 10
 	}
 
