@@ -73,18 +73,15 @@ function Start-LumiCalculation ($message, $inputFile, $abcdInfo, $lum, $abcdErro
 		Start-Sleep -Seconds 10
 	}
 
-	$jobs += Start-Job -InitializationScript { 
+	$job += Start-Job -InitializationScript { 
 			Import-Module ./LimitLibrary.psm1
-			$pathToCMD = "..\..\PSCernRootUtilities\PSCernRootCommands\bin\x86\Debug\PSCernRootCommands.dll"
-			$fileio = [System.IO.FileInfo] $pathToCMD
-			Import-Module $fileio.FullName
 		} -ScriptBlock {
 			Param($message, $inputFile, $abcdInfo, $lum, $abcdError, $jobID, $dataset, $path)
 			Set-Location $path
-			Write-Host $PWD.Path
 			$limit = Invoke-LumiRun $inputFile $abcdInfo $lum $abcdError $jobID $dataset
-			return ($limit, $dataset, $message)
+			return ($dataset, $message, $limit)
 		} -ArgumentList ($message, $inputFile, $abcdInfo, $lum, $abcdError, $jobID, $dataset, $PWD.Path)
+	$jobs += ($job)
 }
 
 #########
@@ -124,4 +121,15 @@ foreach ($signal in $singalSamples) {
 }
 
 # Finally, collect all the jobs and dump out the info.
-$jobs | Wait-Job | Receive-Job | % { Write-Output "$_[1] $_[2] $_[0]" }
+get-job | Wait-Job | % {
+	$info = Receive-Job $_
+	$limitExp = Get-TH1Property $info[2] Minimum xsec_BR_95CL
+	$limitObs = Get-TH1Property $info[2] Minimum xsec_BR_events__limit
+	Write-Output "$($info[0]), $($info[1]), $limitExp, $limitObs"
+}
+get-job | Remove-Job
+
+#	$rootName = "$stubname.root"
+#	Write-Host "Stuf name is $rootName"
+#	#return ($limitExp, $limitObs)
+#	return (1.0, 1.0)

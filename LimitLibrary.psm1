@@ -8,9 +8,7 @@ function Invoke-LumiRun ($inputFile, $abcdInfo, $lum, $abcdError, $jobID, $datas
 		$r | Set-Content $logfile
 	}
 
-	$limitExp = Get-TH1Property "$stubname.root" Minimum xsec_BR_95CL
-	$limitObs = Get-TH1Property "$stubname.root" Minimum xsec_BR_events__limit
-	return ($limitExp, $limitObs)
+	return "$stubname.root"
 }
 
 # What we want others to see
