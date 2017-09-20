@@ -392,10 +392,10 @@ HypoTestInvTool::RunInverter(Int_t enne, TString esse, RooWorkspace * w,
 
 	if (mMinimizerType.size() == 0) mMinimizerType = ROOT::Math::MinimizerOptions::DefaultMinimizerType();
 	else
-		ROOT::Math::MinimizerOptions::SetDefaultMinimizer(mMinimizerType.c_str());
+	ROOT::Math::MinimizerOptions::SetDefaultMinimizer(mMinimizerType.c_str());
 
 	Info("StandardHypoTestInvDemo", "Using %s as minimizer for computing the test statistic",
-		ROOT::Math::MinimizerOptions::DefaultMinimizerType().c_str());
+	ROOT::Math::MinimizerOptions::DefaultMinimizerType().c_str());
 
 	if (doFit) {
 

@@ -5,6 +5,8 @@
 
 #include <ostream>
 
+#include "Math/MinimizerOptions.h"
+
 //
 // Tool to run XXXX
 //
