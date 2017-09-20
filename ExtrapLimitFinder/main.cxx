@@ -140,25 +140,25 @@ config parse_command_line(int argc, char **argv)
 	// Setup the command line arguments
 	Args args({
 		// The input MC file which contains just about all the info we could need from MC.
-		Arg("extrapFile", "e", "The extrapolation root file", Arg::Is::Required),
+                Arg("extrapFile", "e", "The extrapolation root file", Is::Required),
 
 		// We need to know how many data were in each of the A, B, C, and D regions.
-		Arg("nA", "A", "How many events observed in data in region A", Arg::Is::Required),
-		Arg("nB", "B", "How many events observed in data in region B", Arg::Is::Required),
-		Arg("nC", "C", "How many events observed in data in region C", Arg::Is::Required),
-		Arg("nD", "D", "How many events observed in data in region D", Arg::Is::Required),
+                Arg("nA", "A", "How many events observed in data in region A", Is::Required),
+		Arg("nB", "B", "How many events observed in data in region B", Is::Required),
+		Arg("nC", "C", "How many events observed in data in region C", Is::Required),
+		Arg("nD", "D", "How many events observed in data in region D", Is::Required),
 
-		Arg("Luminosity", "L", "Lumi, in fb, for this dataset", Arg::Is::Optional),
-		Arg("ABCDError", "e", "Error on the ABCD component", Arg::Is::Optional),
+		Arg("Luminosity", "L", "Lumi, in fb, for this dataset", Is::Optional),
+		Arg("ABCDError", "e", "Error on the ABCD component", Is::Optional),
 
 		// Output options
-		Arg("OutputFile", "f", "Name of output root file for limit results. By default based on input filename", Arg::Is::Optional),
+		Arg("OutputFile", "f", "Name of output root file for limit results. By default based on input filename", Is::Optional),
 
 		// How is the limit set?
-		Flag("UseAsym", "a", "Do asymtotic fit rather than using toys (toys are slow!)", Arg::Is::Optional),
-		Flag("ExtrapAtEachLifetime", "l", "Refit limit at each lifetime point to take into account differing efficiencies at A, B, C and D", Arg::Is::Optional),
-		Arg("RescaleSignal", "r", "Rescale the expected signal in region A to this number during limit setting", Arg::Is::Optional),
-		Arg("NToys", "n", "Number of toys to use when using toy method. Defaults to 5000.", Arg::Is::Optional),
+		Flag("UseAsym", "a", "Do asymtotic fit rather than using toys (toys are slow!)"),
+		Flag("ExtrapAtEachLifetime", "l", "Refit limit at each lifetime point to take into account differing efficiencies at A, B, C and D"),
+		Arg("RescaleSignal", "r", "Rescale the expected signal in region A to this number during limit setting", Is::Optional),
+		Arg("NToys", "n", "Number of toys to use when using toy method. Defaults to 5000.", Is::Optional),
 
 		// General
 		Flag("Unofficial", "u", "Turn off some protection checks so it can run even thought input isn't 'just right'"),
