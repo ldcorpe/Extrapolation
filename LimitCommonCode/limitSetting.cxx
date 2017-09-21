@@ -5,6 +5,8 @@
 #include "extrap_file_wrapper.h"
 #include "limit_output_file.h"
 
+#include "TH1.h"
+
 #include "SimulABCD.h"
 
 #include <algorithm>

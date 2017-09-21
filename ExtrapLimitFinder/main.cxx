@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 	// Get ROOT setup so we don't have funny problems with it later.
 	int dummy_argc = 0;
 	auto a = unique_ptr<TApplication>(new TApplication("extrapolate_betaw", &dummy_argc, argv));
-	gROOT->SetBatch(true);
+	//gROOT->SetBatch(kTRUE);
 
 	// Protect against anything weird going wrong so we get a sensible error message.
 	try {

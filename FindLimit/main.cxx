@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 {
 	int dummy_argc = 0;
 	auto a = make_unique<TApplication>("extrapolate_betaw", &dummy_argc, argv);
-	gROOT->SetBatch(true);
+	//gROOT->SetBatch(true);
 	try {
 		// Pull out the various command line arguments
 		auto config = parse_command_line(argc, argv);
