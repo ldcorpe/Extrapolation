@@ -1,4 +1,4 @@
-﻿using libDataAccess;
+using libDataAccess;
 using libDataAccess.Utils;
 using LINQToTreeHelpers.FutureUtils;
 using LinqToTTreeInterfacesLib;

@@ -1,4 +1,4 @@
-﻿using LINQToTreeHelpers.FutureUtils;
+using LINQToTreeHelpers.FutureUtils;
 using LINQToTTreeLib;
 using System;
 using System.Collections.Generic;
