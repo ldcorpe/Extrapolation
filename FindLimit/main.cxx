@@ -91,16 +91,16 @@ limit_config parse_command_line(int argc, char **argv)
 	// Setup the command line arguments
 	Args args({
 		// Arguments that must be present on the command line, one after the other
-		Arg("nA", "A", "Number of events observed in A.", Arg::Ordinality::Required),
-		Arg("nB", "B", "Number of events observed in B.", Arg::Ordinality::Required),
-		Arg("nC", "C", "Number of events observed in C.", Arg::Ordinality::Required),
-		Arg("nD", "D", "Number of events observed in D.", Arg::Ordinality::Required),
+		Arg("nA", "A", "Number of events observed in A.", Ordinality::Required),
+		Arg("nB", "B", "Number of events observed in B.", Ordinality::Required),
+		Arg("nC", "C", "Number of events observed in C.", Ordinality::Required),
+		Arg("nD", "D", "Number of events observed in D.", Ordinality::Required),
 
-		Arg("sA", "w", "Number of signal events expected in A.", Arg::Ordinality::Required),
-		Arg("sB", "x", "Number of signal events expected in B.", Arg::Ordinality::Required),
-		Arg("sC", "y", "Number of signal events expected in C.", Arg::Ordinality::Required),
-		Arg("sD", "z", "Number of signal events expected in D.", Arg::Ordinality::Required),
-		Flag("UseAsym", "a", "Do asymtotic fit rather than using toys", Arg::Ordinality::Optional)
+		Arg("sA", "w", "Number of signal events expected in A.", Ordinality::Required),
+		Arg("sB", "x", "Number of signal events expected in B.", Ordinality::Required),
+		Arg("sC", "y", "Number of signal events expected in C.", Ordinality::Required),
+		Arg("sD", "z", "Number of signal events expected in D.", Ordinality::Required),
+		Flag("UseAsym", "a", "Do asymtotic fit rather than using toys")
 	});
 
 	// Make sure we got all the command line arguments we need
