@@ -1,4 +1,4 @@
-# Build the extrap by limit finder
+# Build the limit finder
 
 ROOTCFLAGS	= $(shell root-config --cflags)
 ROOTLIBS	= $(shell root-config --libs)
@@ -19,7 +19,7 @@ GLIBS		= $(ROOTGLIBS)
 
 OBJS		= main.o limitSetting.o run_ABCD.o HypoTestInvTool.o
 
-ExtrapLimitFinder:	$(OBJS)
+FindLimit:	$(OBJS)
 	$(CXX) -o $@ $(OBJS) $(CXXFLAGS) $(LIBS)
 
 main.o : main.cxx $(COMMONLIM)/extrap_file_wrapper.h $(COMMONLIM)/limitSetting.h
