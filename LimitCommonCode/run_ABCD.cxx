@@ -404,6 +404,10 @@ HypoTestInvTool::LimitResults simultaneousABCD(const Double_t n[4], const Double
 	}
 
 	//Systematic uncertanties' nuisance parameters 
+	systematic_errors["lumi"]=0.021;
+	systematic_errors["mc_eff"]=0.24;
+	systematic_errors["abcd"]=0.36;
+
 	//lumi
 	wspace->factory("alpha_lumi[1, 0, 10]");
 	wspace->factory("nom_lumi[1, 0, 10]");
@@ -617,7 +621,7 @@ HypoTestInvTool::LimitResults simultaneousABCD(const Double_t n[4], const Double
 
 	Double_t par_poi_min = 0.0;   // mu scanned from par_poi_min to par_poi_max with par_npointscan steps
 	Double_t par_poi_max = 0.01;
-	Int_t    par_npointscan = 20000; // default: 100
+	Int_t    par_npointscan = 100; // default: 100
 
 	auto score = StandardHypoTestInvDemo(0, "", out_filename, "wspace", "mc", "mc", "obsData", calculationType, testStatType, true, par_npointscan, par_poi_min, par_poi_max, par_ntoys);
 
