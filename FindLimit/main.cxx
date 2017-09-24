@@ -105,7 +105,7 @@ limit_config parse_command_line(int argc, char **argv)
 
 	// Make sure we got all the command line arguments we need
 	if (argc == 1 || !args.Parse(argc, argv)) {
-		cout << args.Usage("PlotSingleLimit") << endl;
+	        cout << args.Usage("FindLimit") << endl;
 		cout << "  -> A, B, C, and D are defined as they are for the CalRatio analysis!" << endl;
 		throw runtime_error("Bad command line arguments - exiting");
 	}

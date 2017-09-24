@@ -149,7 +149,7 @@ config parse_command_line(int argc, char **argv)
 		Arg("nD", "D", "How many events observed in data in region D", Is::Required),
 
 		Arg("Luminosity", "L", "Lumi, in fb, for this dataset", Is::Optional),
-		Arg("ABCDError", "e", "Error on the ABCD component", Is::Optional),
+		Arg("ABCDError", "E", "Error on the ABCD component", Is::Optional),
 
 		// Output options
 		Arg("OutputFile", "f", "Name of output root file for limit results. By default based on input filename", Is::Optional),
@@ -166,7 +166,7 @@ config parse_command_line(int argc, char **argv)
 
 	// Make sure we got all the command line arguments we need
 	if (argc == 1 || !args.Parse(argc, argv)) {
-		cout << args.Usage("PlotSingleLimit") << endl;
+		cout << args.Usage("ExtrapLimitFinder") << endl;
 		throw runtime_error("Bad command line arguments - exiting");
 	}
 
