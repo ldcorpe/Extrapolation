@@ -259,6 +259,8 @@ ExtrapLimitFinder/brasilianFlag.*
 *.o
 /ExtrapLimitFinder/run
 /ExtrapLimitFinder/ExtrapLimitFinder
+FindLimit/run
+FindLimit/FindLimit
 *.pdf
 /junk.txt
 /brasilianFlag.C
