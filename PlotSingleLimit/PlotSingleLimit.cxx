@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 	// Setup the command line arguments
 	Args args({
 		// Arguments that must be present on the command line, one after the other
-		Arg("extrapfile", "e", "ROOT file containing the efficiency vs ctau extrapolation curve", Arg::Ordinality::Required)
+		Arg("extrapfile", "e", "ROOT file containing the efficiency vs ctau extrapolation curve", Ordinality::Required)
 	});
 
 	// Make sure we got all the command line arguments we need

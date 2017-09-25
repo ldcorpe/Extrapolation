@@ -262,14 +262,14 @@ extrapolate_config parse_command_line(int argc, char **argv)
 	// Setup the command line arguments
 	Args args({
 		// Files that drive this proces
-		Arg("muonTreeFile", "m", "The input MC file containing LLP and pass/fail info", Arg::Ordinality::Required),
-		Arg("output", "f", "Output file to write results out", Arg::Ordinality::Required),
+		Arg("muonTreeFile", "m", "The input MC file containing LLP and pass/fail info", Ordinality::Required),
+		Arg("output", "f", "Output file to write results out", Ordinality::Required),
 
 		// CTau that is required
-		Arg("ctau", "c", "The ctau that the MC file was generated at", Arg::Ordinality::Required),
+		Arg("ctau", "c", "The ctau that the MC file was generated at", Ordinality::Required),
 
 		// Options
-		Flag("UseFlatBeta", "b", "Use only Lxy to do the extrapolation", Arg::Is::Optional),
+		Flag("UseFlatBeta", "b", "Use only Lxy to do the extrapolation"),
 	});
 
 	// Make sure we got all the command line arguments we need
