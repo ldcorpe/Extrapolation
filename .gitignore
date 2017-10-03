@@ -264,3 +264,7 @@ FindLimit/FindLimit
 *.pdf
 /junk.txt
 /brasilianFlag.C
+*.pcm
+*.d
+*.so
+*\#
