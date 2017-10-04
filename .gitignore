@@ -268,3 +268,4 @@ FindLimit/FindLimit
 *.d
 *.so
 *\#
+ExtrapolateByBeta/ExtrapolateByBeta
