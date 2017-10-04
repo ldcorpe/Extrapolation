@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import ROOT as r
+import argparse
 import os
 from array import array
 r.gROOT.SetBatch(1)
@@ -7,34 +8,42 @@ r.gROOT.SetBatch(1)
 #Import all functions from the selection macro 
 r.gSystem.Load('CalRSelection_C.so')
 
-#Open the right file
-sample = "mH400_mS100"
-fileName = "/afs/cern.ch/work/a/apmorris/private/ATLAS/DisplacedJets/mc15_13TeV.304814.MgPy8_HSS_LongLived_mH600_mS50_lt5m.r7772_dv17.root"
-treeName = "recoTree"
+parser = argparse.ArgumentParser(description='Slim MC file to use in extrapolation code.')
+#parser.add_argument('-s', metavar='sample', dest='samplename', nargs=1, help='Sample to process, e.g. mH600_mS150_lt5m')
 
+parser.add_argument('-s', '--sample', help='Sample to process, e.g. mH600_mS150_lt5m')
+parser.add_argument('-o', '--outfile', help='Name of output root file')
+args = parser.parse_args()
+parser.print_help()
+
+#Open the right file
+path='/afs/cern.ch/work/a/apmorris/private/ATLAS/DisplacedJets/mc15_13TeV_'
+fileName= path + args.sample
+treeName = 'recoTree'
+path + args.sample 
 inFile = r.TFile(fileName)
 tree = inFile.Get(treeName)
 
 #Define the output file and tree
-f = r.TFile( 'test.root', 'recreate' ) #change name
+f = r.TFile( args.outfile, 'recreate' ) #change name
 t = r.TTree( 'extrapTree', 'Used as input for the extrapolation' ) #change name
 
 #Set up the branches in the output tree
 eventNumber = array( 'i', [ 0 ] )
 PassedCalRatio = array( 'i', [ 0 ] )
 
-llp1_pt = array( 'f', [ 0. ] )
-llp2_pt = array( 'f', [ 0. ] )
-llp1_eta = array( 'f', [ 0. ] )
-llp2_eta = array( 'f', [ 0. ] )
-llp1_phi = array( 'f', [ 0. ] )
-llp2_phi = array( 'f', [ 0. ] )
-llp1_E = array( 'f', [ 0. ] )
-llp2_E = array( 'f', [ 0. ] )
-llp1_Lxy = array( 'f', [ 0. ] )
-llp2_Lxy = array( 'f', [ 0. ] )
+llp1_pt = array( 'd', [ 0. ] )
+llp2_pt = array( 'd', [ 0. ] )
+llp1_eta = array( 'd', [ 0. ] )
+llp2_eta = array( 'd', [ 0. ] )
+llp1_phi = array( 'd', [ 0. ] )
+llp2_phi = array( 'd', [ 0. ] )
+llp1_E = array( 'd', [ 0. ] )
+llp2_E = array( 'd', [ 0. ] )
+llp1_Lxy = array( 'd', [ 0. ] )
+llp2_Lxy = array( 'd', [ 0. ] )
 
-event_weight = array( 'f', [ 0. ] )
+event_weight = array( 'd', [ 0. ] )
 
 RegionA = array( 'i', [ 0 ] )
 RegionB = array( 'i', [ 0 ] )
@@ -44,18 +53,18 @@ RegionD = array( 'i', [ 0 ] )
 t.Branch( 'eventNumber', eventNumber, 'eventNumber/I')
 t.Branch( 'PassedCalRatio', PassedCalRatio, 'PassedCalRatio/I')
 
-t.Branch( 'llp1_pt', llp1_pt, 'llp1_pt/F')
-t.Branch( 'llp2_pt', llp2_pt, 'llp2_pt/F')
-t.Branch( 'llp1_eta', llp1_eta, 'llp1_eta/F')
-t.Branch( 'llp2_eta', llp2_eta, 'llp2_eta/F')
-t.Branch( 'llp1_phi', llp1_phi, 'llp1_phi/F')
-t.Branch( 'llp2_phi', llp2_phi, 'llp2_phi/F')
-t.Branch( 'llp1_E', llp1_E, 'llp1_E/F')
-t.Branch( 'llp2_E', llp2_E, 'llp2_E/F')
-t.Branch( 'llp1_Lxy', llp1_Lxy, 'llp1_Lxy/F')
-t.Branch( 'llp2_Lxy', llp2_Lxy, 'llp2_Lxy/F')
+t.Branch( 'llp1_pt', llp1_pt, 'llp1_pt/D')
+t.Branch( 'llp2_pt', llp2_pt, 'llp2_pt/D')
+t.Branch( 'llp1_eta', llp1_eta, 'llp1_eta/D')
+t.Branch( 'llp2_eta', llp2_eta, 'llp2_eta/D')
+t.Branch( 'llp1_phi', llp1_phi, 'llp1_phi/D')
+t.Branch( 'llp2_phi', llp2_phi, 'llp2_phi/D')
+t.Branch( 'llp1_E', llp1_E, 'llp1_E/D')
+t.Branch( 'llp2_E', llp2_E, 'llp2_E/D')
+t.Branch( 'llp1_Lxy', llp1_Lxy, 'llp1_Lxy/D')
+t.Branch( 'llp2_Lxy', llp2_Lxy, 'llp2_Lxy/D')
 
-t.Branch( 'event_weight', event_weight, 'event_weight/F')
+t.Branch( 'event_weight', event_weight, 'event_weight/D')
 
 t.Branch( 'RegionA', RegionA, 'RegionA/I')
 t.Branch( 'RegionB', RegionB, 'RegionB/I')
@@ -64,7 +73,7 @@ t.Branch( 'RegionD', RegionD, 'RegionD/I')
 
 #Keep track of the number of events
 counter = 0
-maxcount = 10000
+maxcount = 100000
 
 #For each event:
 # - check if it passes the trigger and selection
