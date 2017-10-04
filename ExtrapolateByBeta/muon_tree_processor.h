@@ -16,7 +16,7 @@ public:
 	~muon_tree_processor();
 
 	struct eventInfo {
-		bool PassedCalRatio;
+		int PassedCalRatio;
 		double vpi1_pt;
 		double vpi1_eta;
 		double vpi1_phi;
@@ -28,10 +28,10 @@ public:
 		double vpi2_E;
 		double vpi2_Lxy;
 		double weight;
-		bool RegionA;
-		bool RegionB;
-		bool RegionC;
-		bool RegionD;
+		int RegionA;
+		int RegionB;
+		int RegionC;
+		int RegionD;
 	};
 
 	// This function will be called before the entries are processed. Only if it returns true will
