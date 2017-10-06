@@ -2,7 +2,15 @@
 
 Extrapolating the final results between signal lifetimes. 
 
-### Clone repository
+#### Steps to run the code:
+1. Apply the selection to the signal samples using the GenerateROOTFiles.py script
+2. Run the lifetime extrapolation on these slimmed files, with ExtrapolateByBeta
+3. Calculate the extrapolated limits using ExtrapLimitFinder
+4. Make limit plots, scripts for this are in the plots directory
+
+---
+
+### To clone this repository
 
 ```bash
 git clone https://github.com/apmorris/Extrapolation.git
@@ -11,39 +19,54 @@ git clone https://github.com/apmorris/Extrapolation.git
 ### Set up (lxplus)
 
 ```bash
-setupATLAS
-lsetup git
-lsetup "root 6.10.04-x86_64-slc6-gcc62-opt"
+. setuplxplus.sh
 # Make sure local copy is up to date
 git pull origin master
 ```
 
-### Run limit finder
+---
+## Generate the slimmed MC files
+
+The script `GenerateMCFiles/GenerateROOTFiles.py` applies the selection to our 
+signal samples, outputting a root file in the right format for the extrapolation 
+code to use.
 
 ```bash
-cd FindLimit/
+# First compile the selection header (note: still need to make an overall Makefile)
+cd GenerateMCFiles/
+root -l CalRSelection.h+
+# Then to run
+python GenerateROOTFiles.py -s <SignalSampleFile> -o <OutputFile> -n <nEvents>
+```
+
+---
+## Run the lifetime extrapolation on the slimmed files
+
+The ExtrapolateByBeta code takes the slimmed file generated above, and performs an 
+extrapolation over lifetimes, resulting in another root file containing histograms.
+
+```bash
+# First compile the package
+cd ../ExtrapolateByBeta/
 make clean
-make 
-./FindLimit -A <nA> -B <nB> -C <nC> -D <nD> -w <sA> -x <sB> -y <sC> -z <sD> (-a)
+make
+# Then to run
+./ExtrapolateByBeta -m <SlimmedSampleFile> -f <OutputFile> -c <GeneratedLifetime>
+```
+
+---
+## Calculate the extrapolated limits
+
+The ExtrapLimitFinder code takes the extrapolated lifetime root file from above, and 
+calculates the limits for the sample. The output is a collection of histograms which
+can then be turned into the classic limit plots.
+
+```bash
+cd ../ExtrapLimitFinder/
+make clean
+make
+./ExtrapLimitFinder 
 ```
 _NB:_ systematic errors are currently hardcoded into LimitCommonCode/run_ABCD.cxx
 
-### Run extrapolation
-
-```bash
-cd ExtrapLimitFinder/
-make clean
-make
-./ExtrapLimitFinder
-```
-
-### Commit any changes
-
-```bash
-git status
-git add <files>
-git commit -m "Descriptive commit message"
-git push origin master
-```
-
-Code inherited from Gordon Watts, modified to work on lxplus.
+> Code inherited from Gordon Watts, modified to work on lxplus.
