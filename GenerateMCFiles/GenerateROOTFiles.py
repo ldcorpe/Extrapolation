@@ -11,16 +11,15 @@ r.gSystem.Load('CalRSelection_C.so')
 parser = argparse.ArgumentParser(description='Slim MC file to use in extrapolation code.')
 #parser.add_argument('-s', metavar='sample', dest='samplename', nargs=1, help='Sample to process, e.g. mH600_mS150_lt5m')
 
-parser.add_argument('-s', '--sample', help='Sample to process, e.g. mH600_mS150_lt5m')
+parser.add_argument('-s', '--sample', help='Sample to process, e.g. mH600_mS150_lt5m.root')
 parser.add_argument('-o', '--outfile', help='Name of output root file')
+parser.add_argument('-n', '--nevents', help='Number of events to process (default -1)', default='-1', type=int)
 args = parser.parse_args()
 parser.print_help()
 
 #Open the right file
-path='/afs/cern.ch/work/a/apmorris/private/ATLAS/DisplacedJets/mc15_13TeV_'
-fileName= path + args.sample
+fileName='/afs/cern.ch/work/a/apmorris/private/ATLAS/DisplacedJets/' + args.sample
 treeName = 'recoTree'
-path + args.sample 
 inFile = r.TFile(fileName)
 tree = inFile.Get(treeName)
 
@@ -73,7 +72,7 @@ t.Branch( 'RegionD', RegionD, 'RegionD/I')
 
 #Keep track of the number of events
 counter = 0
-maxcount = 100000
+maxcount = args.nevents
 
 #For each event:
 # - check if it passes the trigger and selection
@@ -82,7 +81,8 @@ maxcount = 100000
 for ev in tree:
 
   counter += 1
-  if counter > maxcount: break
+  if maxcount > 0:
+    if counter > maxcount: break
 
   passedTrigger = False
   passedTrigger = ev.event_passCalRatio_TAU60
