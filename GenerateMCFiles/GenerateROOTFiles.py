@@ -18,9 +18,8 @@ args = parser.parse_args()
 parser.print_help()
 
 #Open the right file
-fileName='/afs/cern.ch/work/a/apmorris/private/ATLAS/DisplacedJets/' + args.sample
 treeName = 'recoTree'
-inFile = r.TFile(fileName)
+inFile = r.TFile(args.sample)
 tree = inFile.Get(treeName)
 
 #Define the output file and tree
