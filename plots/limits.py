@@ -3,7 +3,7 @@ import ROOT as r
 import argparse
 import os
 from array import array
-r.gROOT.SetBatch(1)
+#r.gROOT.SetBatch(1)
 r.gStyle.SetOptLogy(1)
 r.gStyle.SetOptLogx(1)
 
@@ -13,11 +13,34 @@ parser.add_argument('-e', '--extrapFile', help='Path to root file containing ext
 args = parser.parse_args()
 parser.print_help()
 
+#Method to get TGraphAsymmErrors from TH1's
+def getTGraphAsymErrs(nominalHist,upHist,dnHist):
+  result = r.TGraphAsymmErrors()
+  for ibin in range(0,nominalHist.GetNbinsX()+1):
+     nominalY=nominalHist.GetBinContent(ibin)
+     nominalX=nominalHist.GetBinCenter(ibin)
+     #XErr=nomHist.GetBinWidth(ibin)/2.
+     YErrUp=upHist.GetBinContent(ibin)
+     YErrDn=dnHist.GetBinContent(ibin)
+     result.SetPoint(ibin,nominalX,nominalY)
+     result.SetPointEYhigh(ibin,YErrUp)
+     result.SetPointEYlow(ibin,YErrDn)
+     print "bin ", ibin, " center ",  nominalHist.GetBinCenter(ibin) , " eUp ", YErrUp , "eDn ", YErrDn, " eAll "
+  return result
+
+def getTGraph(hist):
+  result = r.TGraph()
+  for ibin in range(0,hist.GetNbinsX()+1):
+    histY=hist.GetBinContent(ibin)
+    histX=hist.GetBinCenter(ibin)
+    result.SetPoint(ibin,histX,histY)
+  return result
+
 #Open the file
 inFile = r.TFile(args.extrapFile)
 
 #Set up the canvas
-#canvas = r.TCanvas('canvas', 'canvas', 600, 600)
+canvas = r.TCanvas('canvas', 'canvas', 600, 600)
 
 # Get histograms
 centralExp = inFile.Get('xsec_BR_95CL')
@@ -25,36 +48,21 @@ plus1 = inFile.Get('xsec_BR_events__p1')
 plus2 =inFile.Get('xsec_BR_events__p2')
 minus1 =inFile.Get('xsec_BR_events__n1')
 minus2 =inFile.Get('xsec_BR_events__n2')
-centralObs = inFile.Get('xsec_BR__limit')
+centralObs = inFile.Get('xsec_BR_events__limit')
 
-#GET CENTRAL VALUES OF EACH AND FILL ARRAYS TO THEN SUBTRACT ETC
-
-centralExp.Print()
+centralObs.Print()
 plus1.Print()
 
-centralExp.Draw()
-r.gPad.SaveAs("testCentre.png")
-plus1.Draw()
-r.gPad.SaveAs("testPlus.png")
+tg_1s = getTGraphAsymErrs(centralExp,plus1,minus1)
+tg_2s = getTGraphAsymErrs(centralExp,plus2,minus2)
 
-diff_plus1 = r.TH1D('diff_plus1', 'diff_plus1', centralExp.GetNbinsX(), centralExp.GetXaxis().GetXmin(), centralExp.GetXaxis().GetXmax())
-diff_plus2 = r.TH1D('diff_plus2', 'diff_plus2', centralExp.GetNbinsX(), centralExp.GetXaxis().GetXmin(), centralExp.GetXaxis().GetXmax())
-diff_minus1 = r.TH1D('diff_minus1', 'diff_minus2', centralExp.GetNbinsX(), centralExp.GetXaxis().GetXmin(), centralExp.GetXaxis().GetXmax())
-diff_minus2 = r.TH1D('diff_minus2', 'diff_minus2', centralExp.GetNbinsX(), centralExp.GetXaxis().GetXmin(), centralExp.GetXaxis().GetXmax())
+tg_Obs = getTGraph(centralObs)
 
-#diff_plus1.Print()
+tg_1s.Draw("ape")
+#tg_2s.Draw("4c same")
+#tg_Obs.Draw("c same")
 
-diff_plus1.Add(centralExp, plus1, -1, 1)
-diff_plus2 = plus2.Add(centralExp, -1)
-diff_minus1 = minus1.Add(centralExp, -1)
-diff_minus2 = minus2.Add(centralExp, -1)
+#canvas.Modified()
+#canvas.Update()
 
-diff_plus1.Draw()
-
-#g_centralExp_1 = r.TGraphAsymmErrors(centralExp)
-#g_centralExp_2 = r.TGraphAsymmErrors(centralExp)
-#g_centralObs = r.TGraph(centralObs)
-
-
-r.gPad.SaveAs("testDiff.png")
-#Take central limit as 
+canvas.SaveAs("test.png")
