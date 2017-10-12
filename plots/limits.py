@@ -3,7 +3,7 @@ import ROOT as r
 import argparse
 import os
 from array import array
-#r.gROOT.SetBatch(1)
+r.gROOT.SetBatch(1)
 r.gStyle.SetOptLogy(1)
 r.gStyle.SetOptLogx(1)
 
@@ -19,13 +19,15 @@ def getTGraphAsymErrs(nominalHist,upHist,dnHist):
   for ibin in range(0,nominalHist.GetNbinsX()+1):
      nominalY=nominalHist.GetBinContent(ibin)
      nominalX=nominalHist.GetBinCenter(ibin)
-     #XErr=nomHist.GetBinWidth(ibin)/2.
+     XErr=nominalHist.GetBinWidth(ibin)/2.
      YErrUp=upHist.GetBinContent(ibin)
      YErrDn=dnHist.GetBinContent(ibin)
      result.SetPoint(ibin,nominalX,nominalY)
-     result.SetPointEYhigh(ibin,YErrUp)
-     result.SetPointEYlow(ibin,YErrDn)
-     print "bin ", ibin, " center ",  nominalHist.GetBinCenter(ibin) , " eUp ", YErrUp , "eDn ", YErrDn, " eAll "
+     result.SetPointEYhigh(ibin,abs(nominalY-YErrUp))
+     result.SetPointEYlow(ibin,abs(nominalY-YErrDn))
+     result.SetPointEXlow(ibin,XErr)
+     result.SetPointEXhigh(ibin,XErr)
+     print "bin ", ibin, " nominalX  ", nominalX ,  " nominalY ", nominalY, " eUp ", YErrUp , "eDn ", YErrDn, " eAll "
   return result
 
 def getTGraph(hist):
@@ -58,11 +60,17 @@ tg_2s = getTGraphAsymErrs(centralExp,plus2,minus2)
 
 tg_Obs = getTGraph(centralObs)
 
-tg_1s.Draw("ape")
+tg_2s.SetMaximum(1e3)
+tg_2s.SetMinimum(1e-5)
+tg_2s.SetFillColor(r.kYellow)
+tg_1s.SetFillColor(r.kGreen-3)
+tg_2s.Draw("a3")
+tg_1s.Draw("3 same ")
+tg_Obs.Draw("plsame ")
 #tg_2s.Draw("4c same")
 #tg_Obs.Draw("c same")
 
 #canvas.Modified()
 #canvas.Update()
 
-canvas.SaveAs("test.png")
+canvas.SaveAs("test.pdf")
