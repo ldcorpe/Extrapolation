@@ -3,6 +3,11 @@ import ROOT as r
 import argparse
 import os
 from array import array
+
+r.gROOT.LoadMacro('atlasstyle-00-04-02/AtlasStyle.C')
+r.gROOT.LoadMacro('atlasstyle-00-04-02/AtlasUtils.C')
+r.gROOT.LoadMacro('atlasstyle-00-04-02/AtlasLabels.C')
+r.SetAtlasStyle()
 r.gROOT.SetBatch(1)
 r.gStyle.SetOptLogy(1)
 r.gStyle.SetOptLogx(1)
@@ -43,7 +48,7 @@ def getTGraph(hist):
 inFile = r.TFile(args.extrapFile)
 
 #Set up the canvas
-canvas = r.TCanvas('canvas', 'canvas', 600, 600)
+canvas = r.TCanvas('canvas', 'canvas', 2400, 1600)
 
 # Get histograms
 centralExp = inFile.Get('xsec_BR_95CL')
@@ -61,15 +66,28 @@ tg_Obs = getTGraph(centralObs)
 tg_Exp.SetLineStyle(1)
 tg_Obs.SetLineStyle(2)
 
-tg_2s.SetMaximum(1e3)
-tg_2s.SetMinimum(1e-5)
+tg_2s.SetMaximum(5e2)
+tg_2s.SetMinimum(5e-4)
 
 tg_2s.SetFillColor(r.kYellow)
-tg_1s.SetFillColor(r.kGreen-3)
+tg_1s.SetFillColor(r.kGreen-4)
 
-tg_2s.Draw("a3")
-tg_1s.Draw("3l same ")
-tg_Obs.Draw("l same ")
+tg_2s.GetXaxis().SetTitle('s proper decay length [m]')
+tg_2s.GetYaxis().SetTitle('95% CL Upper Limit on #sigma #times BR [pb]')
+
+tg_2s.Draw("aC4")
+tg_1s.Draw("C4 same ")
+#tg_Obs.Draw("l same ")
 tg_Exp.Draw("l same ")
+
+r.gStyle.SetTextSize(0.05)
+r.ATLASLabel(0.4,0.85,"Work in Progress",1)
+r.gStyle.SetTextSize(0.035)
+r.myText(0.4,0.8,1,"m_{H} = "+args.mH+" GeV, m_{s} = "+args.mS+" GeV")
+r.myText(0.4,0.76,1,"3.2 fb^{-1}  #it{#sqrt{s}} = 13 TeV")
+r.myBoxText(0.4,0.72,0.04,r.kYellow,"expected #pm 1#sigma")
+r.myBoxText(0.4,0.68,0.04,r.kGreen-4,"expected #pm 2#sigma")
+r.myBoxTextDash(0.4,0.64,0.04,r.kWhite,r.kBlack,"expected limit",1)
+r.myBoxTextDash(0.4,0.6,0.04,r.kWhite,r.kBlack,"observed limit",2)
 
 canvas.SaveAs("test.pdf")
