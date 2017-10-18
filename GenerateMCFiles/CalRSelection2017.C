@@ -72,6 +72,8 @@ bool event_selection(int selection,
       && (j1s_logRatio + j2s_logRatio) > 2
       && event_sumMinDR > 0.5
       && eventBDT_value > 0.1;
+
+      return r; // DON'T YOU FORGET THIS
     }
   }
 

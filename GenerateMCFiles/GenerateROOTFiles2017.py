@@ -21,14 +21,7 @@ parser.print_help()
 #Open the right file
 treeName = 'recoTree'
 inFile = r.TFile(args.sample)
-tree1 = inFile.Get(treeName)
-
-#Apply some cuts to the original tree
-dummyFile = r.TFile('dummy.root', 'recreate')
-#dummyFile.cd()
-selection1 = 'Sum$(CalibJet_BDT3weights_bib > 0.6 && CalibJet_pT > 40 && abs(CalibJet_eta) < 2.5 && CalibJet_isGoodLLP)==0'
-tree = tree1.CopyTree(selection1)
-inFile.Close()
+tree = inFile.Get(treeName)
 
 #Define the output file and tree
 f = r.TFile( args.outfile, 'recreate' ) 
@@ -94,16 +87,21 @@ for ev in tree:
   passedTrigger = False
   passedTrigger = ev.event_passCalRatio_cleanLLP_TAU60
   
-  isSelected = False
-  
-  if ev.event_NCleanJets>1 and args.mH>399 : isSelected = r.event_selection(2, ev.CalibJet_pT[ev.BDT3weights_signal_cleanJet_index[0]],r.readVecBool(ev.CalibJet_isGoodLLP,ev.BDT3weights_signal_cleanJet_index[0]),r.readVecBool(ev.CalibJet_isGoodLLP,ev.BDT3weights_signal_cleanJet_index[1]),ev.CalibJet_time[BDT3weights_signal_cleanJet_index[0]],ev.CalibJet_time[ev.BDT3weights_signal_cleanJet_index[1]],ev.CalibJet_time[BDT3weights_bib_cleanJet_index[0]],ev.CalibJet_time[BDT3weights_bib_cleanJet_index[1]],ev.event_MHToHT,ev.event_sumMinDR,ev.CalibJet_isCRHLTJet[BDT3weights_signal_cleanJet_index[0]],ev.CalibJet_isCRHLTJet[BDT3weights_signal_cleanJet_index[1]],ev.CalibJet_logRatio[BDT3weights_signal_cleanJet_index[0]],ev.CalibJet_logRatio[BDT3weights_signal_cleanJet_index[1]],ev.eventBDT_value)
-  
-  if ev.event_NCleanJets>1 and args.mH<399 : isSelected = r.event_selection(1, ev.CalibJet_pT[ev.BDT3weights_signal_cleanJet_index[0]],r.readVecBool(ev.CalibJet_isGoodLLP,ev.BDT3weights_signal_cleanJet_index[0]),r.readVecBool(ev.CalibJet_isGoodLLP,ev.BDT3weights_signal_cleanJet_index[1]),ev.CalibJet_time[BDT3weights_signal_cleanJet_index[0]],ev.CalibJet_time[ev.BDT3weights_signal_cleanJet_index[1]],ev.CalibJet_time[BDT3weights_bib_cleanJet_index[0]],ev.CalibJet_time[BDT3weights_bib_cleanJet_index[1]],ev.event_MHToHT,ev.event_sumMinDR,ev.CalibJet_isCRHLTJet[BDT3weights_signal_cleanJet_index[0]],ev.CalibJet_isCRHLTJet[BDT3weights_signal_cleanJet_index[1]],ev.CalibJet_logRatio[BDT3weights_signal_cleanJet_index[0]],ev.CalibJet_logRatio[BDT3weights_signal_cleanJet_index[1]],ev.eventBDT_value)
+  isSelected = True
+
+  PassBibJetVeto=True
+  for i in range (ev.CalibJet_BDT3weights_bib.size()):
+    if (ev.CalibJet_BDT3weights_bib[i] > 0.6 and ev.CalibJet_pT[i] > 40 and abs(ev.CalibJet_eta[i]) < 2.5 and ev.CalibJet_isGoodLLP[i] ): PassBibJetVeto = False
+
+  if ev.event_NCleanJets>1 and PassBibJetVeto and args.mH>399: 
+    isSelected = r.event_selection(2, ev.CalibJet_pT[ev.BDT3weights_signal_cleanJet_index[0]],r.readVecBool(ev.CalibJet_isGoodLLP,ev.BDT3weights_signal_cleanJet_index[0]),r.readVecBool(ev.CalibJet_isGoodLLP,ev.BDT3weights_signal_cleanJet_index[1]),ev.CalibJet_time[ev.BDT3weights_signal_cleanJet_index[0]],ev.CalibJet_time[ev.BDT3weights_signal_cleanJet_index[1]],ev.CalibJet_time[ev.BDT3weights_bib_cleanJet_index[0]],ev.CalibJet_time[ev.BDT3weights_bib_cleanJet_index[1]],ev.event_MHToHT,ev.event_sumMinDR,ev.CalibJet_minDRTrkpt2[ev.BDT3weights_signal_cleanJet_index[0]],ev.CalibJet_minDRTrkpt2[ev.BDT3weights_signal_cleanJet_index[1]],r.readVecBool(ev.CalibJet_isCRHLTJet,ev.BDT3weights_signal_cleanJet_index[0]),r.readVecBool(ev.CalibJet_isCRHLTJet,ev.BDT3weights_signal_cleanJet_index[1]),ev.CalibJet_logRatio[ev.BDT3weights_signal_cleanJet_index[0]],ev.CalibJet_logRatio[ev.BDT3weights_signal_cleanJet_index[1]],ev.eventBDT_value)
+
+  if ev.event_NCleanJets>1 and PassBibJetVeto and args.mH<399 : isSelected = r.event_selection(1, ev.CalibJet_pT[ev.BDT3weights_signal_cleanJet_index[0]],r.readVecBool(ev.CalibJet_isGoodLLP,ev.BDT3weights_signal_cleanJet_index[0]),r.readVecBool(ev.CalibJet_isGoodLLP,ev.BDT3weights_signal_cleanJet_index[1]),ev.CalibJet_time[ev.BDT3weights_signal_cleanJet_index[0]],ev.CalibJet_time[ev.BDT3weights_signal_cleanJet_index[1]],ev.CalibJet_time[ev.BDT3weights_bib_cleanJet_index[0]],ev.CalibJet_time[ev.BDT3weights_bib_cleanJet_index[1]],ev.event_MHToHT,ev.event_sumMinDR,ev.CalibJet_minDRTrkpt2[ev.BDT3weights_signal_cleanJet_index[0]],ev.CalibJet_minDRTrkpt2[ev.BDT3weights_signal_cleanJet_index[1]],r.readVecBool(ev.CalibJet_isCRHLTJet,ev.BDT3weights_signal_cleanJet_index[0]),r.readVecBool(ev.CalibJet_isCRHLTJet,ev.BDT3weights_signal_cleanJet_index[1]),ev.CalibJet_logRatio[ev.BDT3weights_signal_cleanJet_index[0]],ev.CalibJet_logRatio[ev.BDT3weights_signal_cleanJet_index[1]],ev.eventBDT_value)
 
   region = 0
 
-  if (ev.event_NCleanJets>1): region = r.event_ABCD_plane(ev.CalibJet_pT[ev.BDT13Lxy_index[0]],ev.CalibJet_pT[ev.BDT13Lxy_index[1]],ev.CalibJet_BDT13Lxy[ev.BDT13Lxy_index[0]],ev.CalibJet_BDT13Lxy[ev.BDT13Lxy_index[1]],ev.event_sumMinDR)
-    
+  if (ev.event_NCleanJets>1): region = r.event_ABCD_plane(ev.eventBDT_value,ev.event_sumMinDR)
+
   llp1_E[0] = ev.LLP_E[0]
   llp2_E[0] = ev.LLP_E[1]
   llp1_eta[0] = ev.LLP_eta[0]
@@ -121,10 +119,10 @@ for ev in tree:
   event_weight[0] = ev.eventWeight * abs(ev.pileupEventWeight)
 
   RegionA[0],RegionB[0],RegionC[0],RegionD[0] = 0,0,0,0
-  if region == 1 and passedTrigger and isSelected: RegionA[0] = 1
-  if region == 2 and passedTrigger and isSelected: RegionB[0] = 1
-  if region == 3 and passedTrigger and isSelected: RegionC[0] = 1
-  if region == 4 and passedTrigger and isSelected: RegionD[0] = 1
+  if (region == 1 and passedTrigger and isSelected): RegionA[0] = 1
+  if (region == 2 and passedTrigger and isSelected): RegionB[0] = 1
+  if (region == 3 and passedTrigger and isSelected): RegionC[0] = 1
+  if (region == 4 and passedTrigger and isSelected): RegionD[0] = 1
 #  print RegionA,RegionB,RegionC,RegionD
 
   t.Fill()
